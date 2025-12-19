@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v20.6</title>
+    <title>GIGMASTER PRO | v20.7</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -25,7 +25,6 @@
         .sidebar { width: 280px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
         .main-content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 180px; }
         
-        /* Playlist Item Refinado */
         .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: rgba(255,255,255,0.03); cursor: pointer; font-size: 12px; transition: 0.2s; }
         .pl-item:hover { background: rgba(255,255,255,0.06); }
         .pl-actions { display: flex; gap: 12px; align-items: center; }
@@ -155,13 +154,7 @@
 
         let curPl = null, curSId = null, allS = [];
 
-        function toggleD() { const d = document.getElementById('u-drop'); d.style.display = (d.style.display==='block')?'none':'block'; }
-        window.onclick = (e) => { if(!e.target.closest('.u-badge')) document.getElementById('u-drop').style.display='none'; };
-        function toggleT() { document.body.classList.toggle('light-theme'); }
-        function openM(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeM(id) { document.getElementById(id).style.display = 'none'; }
-        function logout() { sb.auth.signOut(); location.reload(); }
-
+        // --- AUTH & REDIRECTION ---
         async function handleAuth(type) {
             const email = document.getElementById('a-email').value;
             const pass = document.getElementById('a-pass').value;
@@ -177,8 +170,45 @@
                 const { data: profile } = await sb.from('profiles').select('username').eq('id', session.user.id).single();
                 document.getElementById('u-display').innerText = (profile?.username || session.user.email.split('@')[0]).toUpperCase();
                 loadPl();
+            } else {
+                showLogin();
             }
         }
+
+        function showLogin() {
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('auth-screen').style.display = 'flex';
+            // Reseta UI
+            document.getElementById('pl-list').innerHTML = '';
+            document.getElementById('song-list').innerHTML = '';
+            document.getElementById('pl-title').innerText = 'Biblioteca';
+        }
+
+        async function logout() {
+            // Para áudio
+            player.stop();
+            Tone.Transport.stop();
+            
+            // Logout Supabase
+            await sb.auth.signOut();
+            
+            // Reseta variáveis
+            curPl = null;
+            curSId = null;
+            
+            // Volta para login imediatamente
+            showLogin();
+            
+            // Recarrega para limpar cache da memória (opcional, mas seguro)
+            location.reload();
+        }
+
+        // --- RESTO DA LÓGICA (MANTIDA v20.6) ---
+        function toggleD() { const d = document.getElementById('u-drop'); d.style.display = (d.style.display==='block')?'none':'block'; }
+        window.onclick = (e) => { if(!e.target.closest('.u-badge')) document.getElementById('u-drop').style.display='none'; };
+        function toggleT() { document.body.classList.toggle('light-theme'); }
+        function openM(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeM(id) { document.getElementById(id).style.display = 'none'; }
 
         async function updateNick() {
             const n = document.getElementById('in-nick').value; if(!n) return;
@@ -187,7 +217,6 @@
             document.getElementById('u-display').innerText = n.toUpperCase(); closeM('modal-nick');
         }
 
-        // --- GESTÃO DE PASTAS (RENOMEAR ADICIONADO) ---
         async function loadPl() {
             const { data: { user } } = await sb.auth.getUser(); if(!user) return;
             const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
@@ -195,8 +224,8 @@
                 <div class="pl-item" onclick="selPl(${p.id},'${p.nome}')">
                     <span>📂 ${p.nome.toUpperCase()}</span>
                     <div class="pl-actions">
-                        <svg onclick="event.stopPropagation(); renameFoldUI(${p.id}, '${p.nome}')" viewBox="0 0 24 24" width="14" fill="currentColor" title="Renomear"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                        <svg onclick="event.stopPropagation(); delPl(${p.id},'${p.nome}')" viewBox="0 0 24 24" width="14" fill="currentColor" title="Excluir"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        <svg onclick="event.stopPropagation(); renameFoldUI(${p.id}, '${p.nome}')" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        <svg onclick="event.stopPropagation(); delPl(${p.id},'${p.nome}')" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                     </div>
                 </div>`).join('');
         }
@@ -210,8 +239,7 @@
                 if(!name) return;
                 const { data: { user } } = await sb.auth.getUser();
                 await sb.from('playlists').insert({ nome: name, user_id: user.id });
-                closeM('modal-folder');
-                loadPl();
+                closeM('modal-folder'); loadPl();
             };
         }
 
@@ -224,15 +252,13 @@
                 if(!newName || newName === oldName) return closeM('modal-folder');
                 await sb.from('playlists').update({ nome: newName }).eq('id', id);
                 if(curPl === id) document.getElementById('pl-title').innerText = newName;
-                closeM('modal-folder');
-                loadPl();
+                closeM('modal-folder'); loadPl();
             };
         }
 
         async function delPl(id, n) { if(confirm(`Apagar pasta "${n}"?`)) { await sb.from('musicas').delete().eq('playlist_id', id); await sb.from('playlists').delete().eq('id', id); loadPl(); } }
         function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; document.getElementById('btn-up').style.display = 'block'; document.getElementById('btn-zip').style.display = 'block'; loadSongs(); }
 
-        // --- GESTÃO DE MÚSICAS ---
         async function loadSongs() {
             const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl).order('titulo'); allS = data;
             document.getElementById('song-list').innerHTML = data.map(s => `
@@ -258,7 +284,6 @@
         async function saveP() { if(curSId) { await sb.from('musicas').update({pitch: parseInt(document.getElementById('p-slide').value)}).eq('id', curSId); loadSongs(); } }
         async function delS(id) { if(confirm("Apagar música?")) { await sb.from('musicas').delete().eq('id', id); loadSongs(); } }
 
-        // --- DOWNLOADS ---
         async function dlZip() {
             const zip = new JSZip(); for (let s of allS) { try { const r = await fetch(s.audio_url); const b = await r.blob(); zip.file(`${s.titulo}.mp3`, b); } catch(e){} }
             const c = await zip.generateAsync({type:"blob"}); saveAs(c, `playlist.zip`);
@@ -286,7 +311,6 @@
             return bA;
         }
 
-        // --- CONTROLES ---
         document.getElementById('play-btn').onclick = () => {
             if(Tone.Transport.state === "started") { Tone.Transport.pause(); document.getElementById('svg-play').innerHTML = '<path fill="#000" d="M8 5v14l11-7z"/>'; }
             else { Tone.Transport.start(); document.getElementById('svg-play').innerHTML = '<path fill="#000" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; }
