@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | FINAL STABLE</title>
+    <title>GIGMASTER PRO | v23.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -22,17 +22,18 @@
         .drop-menu div:hover { background: var(--green); color: #fff; }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(6px); }
-        .modal-box { background: var(--surface); padding: 30px; border-radius: 20px; border: 1px solid var(--border); width: 100%; max-width: 360px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-        .modal-box input { width: 100%; padding: 14px; background: rgba(0,0,0,0.05); border: 1px solid var(--border); border-radius: 10px; color: var(--text); margin-bottom: 20px; }
+        .modal-box { background: var(--surface); padding: 30px; border-radius: 20px; border: 1px solid var(--border); width: 100%; max-width: 360px; text-align: center; }
+        .modal-box input, .modal-box textarea { width: 100%; padding: 14px; background: rgba(0,0,0,0.05); border: 1px solid var(--border); border-radius: 10px; color: var(--text); margin-bottom: 20px; font-family: inherit; }
 
         .main-container { display: flex; flex: 1; overflow: hidden; }
         .sidebar { width: 280px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
         .main-content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 180px; }
         
-        .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 10px; background: rgba(0,0,0,0.03); cursor: pointer; font-size: 11px; transition: 0.2s; }
+        .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 10px; background: rgba(0,0,0,0.03); cursor: pointer; font-size: 11px; }
         .pl-item.active { background: var(--green); color: #fff; }
-        .pl-actions { display: flex; gap: 8px; }
-        .pl-actions svg { opacity: 0.5; cursor: pointer; }
+        .pl-actions { display: flex; gap: 6px; }
+        .pl-actions svg { opacity: 0.5; cursor: pointer; transition: 0.2s; }
+        .pl-actions svg:hover { opacity: 1; fill: var(--green); }
 
         .song-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
         .song-row.active { border-left: 4px solid var(--green); background: rgba(233, 30, 99, 0.05); color: var(--green); }
@@ -51,13 +52,29 @@
 
     <div id="master-modal" class="modal-overlay">
         <div class="modal-box">
-            <h3 id="mm-title">Título</h3>
+            <h3 id="mm-title" style="color:var(--green)">Título</h3>
             <p id="mm-text" style="font-size:12px; color:var(--sub); margin-bottom:15px;"></p>
             <input type="text" id="mm-input" style="display:none;" placeholder="Digite aqui...">
             <div style="display:flex; gap:12px;">
-                <button class="btn-slim" id="mm-cancel" style="flex:1; border-color:var(--sub); color:var(--sub)">CANCELAR</button>
-                <button class="btn-slim btn-fill" id="mm-confirm" style="flex:1">CONFIRMAR</button>
+                <button class="btn-slim" id="mm-cancel" style="flex:1; border-color:var(--sub); color:var(--sub)">SAIR</button>
+                <button class="btn-slim btn-fill" id="mm-confirm" style="flex:1">OK</button>
             </div>
+        </div>
+    </div>
+
+    <div id="modal-bug" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color:var(--green)">RELATAR BUG</h3>
+            <textarea id="bug-desc" rows="4" placeholder="O que aconteceu?"></textarea>
+            <div style="display:flex; gap:10px;"><button class="btn-slim" onclick="closeM('modal-bug')" style="flex:1">VOLTAR</button><button class="btn-slim btn-fill" onclick="submitBug()" style="flex:1">ENVIAR</button></div>
+        </div>
+    </div>
+
+    <div id="modal-pix" class="modal-overlay" onclick="closeM('modal-pix')">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <h3>APOIAR VIA PIX</h3>
+            <img src="pix.jpg" style="width:100%; border-radius:12px; margin:15px 0;">
+            <button class="btn-slim" style="width:100%" onclick="closeM('modal-pix')">FECHAR</button>
         </div>
     </div>
 
@@ -79,6 +96,8 @@
                 <div class="drop-menu" id="u-drop">
                     <div onclick="toggleT()">🌓 ALTERAR TEMA</div>
                     <div onclick="uiRenameNick()">👤 MUDAR NICKNAME</div>
+                    <div onclick="openM('modal-bug')" style="color:var(--green)">🐞 RELATAR BUG</div>
+                    <div onclick="openM('modal-pix')">💎 APOIAR VIA PIX</div>
                     <div onclick="logout()" style="color:#ff4d4d">🚪 SAIR</div>
                 </div>
             </div>
@@ -123,13 +142,13 @@
         const SB_URL = 'https://mdtqwugkaonipbfqqvhj.supabase.co';
         const SB_KEY = 'sb_publishable_ercRd8vFjpnVyXf0WiPVSw_tWCSmsGm';
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        
         const player = new Tone.Player();
         const shift = new Tone.PitchShift();
         player.connect(shift).toDestination();
 
         let curPl = null, curSId = null;
 
+        // --- AUTH ---
         async function doAuth(type) {
             const email = document.getElementById('f-email').value, pass = document.getElementById('f-pass').value;
             if(!email || !pass) return alert("Preencha os campos.");
@@ -148,6 +167,15 @@
             } else { document.getElementById('auth-screen').style.display = 'flex'; }
         }
 
+        // --- GESTÃO UI ---
+        function showModal({title, text, input, onConfirm}) {
+            const o = document.getElementById('master-modal'); const i = document.getElementById('mm-input');
+            document.getElementById('mm-title').innerText = title; document.getElementById('mm-text').innerText = text || "";
+            i.style.display = input ? 'block' : 'none'; o.style.display = 'flex';
+            document.getElementById('mm-confirm').onclick = () => { onConfirm(i.value || true); o.style.display = 'none'; };
+            document.getElementById('mm-cancel').onclick = () => o.style.display = 'none';
+        }
+
         async function loadPl() {
             const { data: { user } } = await sb.auth.getUser();
             const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
@@ -155,6 +183,8 @@
                 <div class="pl-item ${curPl == p.id ? 'active' : ''}" onclick="selPl(${p.id},'${p.nome}')">
                     <span>📂 ${p.nome.toUpperCase()}</span>
                     <div class="pl-actions">
+                        <svg onclick="event.stopPropagation(); copyLink(${p.id})" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+                        <svg onclick="event.stopPropagation(); uiRenameFolder(${p.id},'${p.nome}')" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
                         <svg onclick="event.stopPropagation(); uiDelFolder(${p.id},'${p.nome}')" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                     </div>
                 </div>`).join('');
@@ -163,11 +193,7 @@
         function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; document.getElementById('btn-up').style.display = 'block'; loadPl(); loadSongs(); }
         async function loadSongs() {
             const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl).order('titulo');
-            document.getElementById('song-list').innerHTML = data.map(s => `
-                <div class="song-row ${curSId === s.id ? 'active' : ''}" onclick="playS('${s.audio_url}', ${s.pitch}, '${s.titulo}', ${s.id})">
-                    <b>${s.titulo}</b>
-                    <span onclick="event.stopPropagation(); uiDelSong(${s.id})" style="opacity:0.3">✕</span>
-                </div>`).join('');
+            document.getElementById('song-list').innerHTML = data.map(s => `<div class="song-row ${curSId==s.id?'active':''}" onclick="playS('${s.audio_url}',${s.pitch},'${s.titulo}',${s.id})"><b>${s.titulo}</b><span onclick="event.stopPropagation(); uiDelSong(${s.id})" style="opacity:0.3">✕</span></div>`).join('');
         }
 
         async function playS(url, p, tit, id) {
@@ -178,28 +204,25 @@
             document.getElementById('svg-play').innerHTML = '<path fill="var(--bg)" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; loadSongs();
         }
 
-        function showModal({title, text, input, onConfirm}) {
-            const o = document.getElementById('master-modal'); const i = document.getElementById('mm-input');
-            document.getElementById('mm-title').innerText = title; document.getElementById('mm-text').innerText = text || "";
-            i.style.display = input ? 'block' : 'none'; o.style.display = 'flex';
-            document.getElementById('mm-confirm').onclick = () => { onConfirm(i.value || true); o.style.display = 'none'; };
-            document.getElementById('mm-cancel').onclick = () => o.style.display = 'none';
-        }
-
-        function uiRenameNick() { showModal({ title: "MUDAR NICKNAME", input: true, onConfirm: async (n) => { const {data:{user}} = await sb.auth.getUser(); await sb.from('profiles').upsert({id:user.id, username:n}); document.getElementById('u-display').innerText = n.toUpperCase(); }}); }
+        // --- WRAPPERS UI ---
+        function uiRenameNick() { showModal({ title: "NICKNAME", input: true, onConfirm: async (n) => { const {data:{user}} = await sb.auth.getUser(); await sb.from('profiles').upsert({id:user.id, username:n}); document.getElementById('u-display').innerText = n.toUpperCase(); }}); }
         function uiAddFolder() { showModal({ title: "NOVA PASTA", input: true, onConfirm: async (n) => { const {data:{user}} = await sb.auth.getUser(); await sb.from('playlists').insert({nome:n, user_id:user.id}); loadPl(); }}); }
+        function uiRenameFolder(id, old) { showModal({ title: "RENOMEAR PASTA", input: true, onConfirm: async (n) => { await sb.from('playlists').update({nome:n}).eq('id', id); loadPl(); }}); }
         function uiDelFolder(id, n) { showModal({ title: "EXCLUIR", text: `Apagar ${n}?`, onConfirm: async () => { await sb.from('musicas').delete().eq('playlist_id', id); await sb.from('playlists').delete().eq('id', id); loadPl(); }}); }
         function uiDelSong(id) { showModal({ title: "REMOVER", onConfirm: async () => { await sb.from('musicas').delete().eq('id', id); loadSongs(); }}); }
+        async function submitBug() { const d = document.getElementById('bug-desc').value; const {data:{user}} = await sb.auth.getUser(); await sb.from('bugs').insert({user_id:user.id, description:d, user_email:user.email}); alert("Enviado!"); closeM('modal-bug'); }
+        function copyLink(id) { navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?share=${id}`).then(() => alert("Link copiado!")); }
 
         function toggleD() { const d = document.getElementById('u-drop'); d.style.display = d.style.display==='block'?'none':'block'; }
         function toggleT() { document.body.classList.toggle('light-theme'); }
+        function openM(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeM(id) { document.getElementById(id).style.display = 'none'; }
         async function logout() { await sb.auth.signOut(); location.reload(); }
-        async function saveP() { if(curSId) { await sb.from('musicas').update({pitch: parseInt(document.getElementById('p-slide').value)}).eq('id', curSId); alert("Salvo!"); } }
+        async function saveP() { if(curSId) { await sb.from('musicas').update({pitch: parseInt(document.getElementById('p-slide').value)}).eq('id', curSId); alert("Tom salvo!"); } }
 
         document.getElementById('play-btn').onclick = () => { if(Tone.Transport.state === "started") { Tone.Transport.pause(); document.getElementById('svg-play').innerHTML = '<path fill="var(--bg)" d="M8 5v14l11-7z"/>'; } else { Tone.Transport.start(); document.getElementById('svg-play').innerHTML = '<path fill="var(--bg)" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; }};
         document.getElementById('v-slide').oninput = (e) => Tone.Destination.volume.rampTo(parseFloat(e.target.value), 0.1);
         document.getElementById('p-slide').oninput = (e) => { shift.pitch = e.target.value; document.getElementById('p-val').innerText = e.target.value; };
-        document.getElementById('seek').oninput = (e) => { Tone.Transport.seconds = parseFloat(e.target.value); };
         setInterval(() => { if(Tone.Transport.state === "started") document.getElementById('seek').value = Tone.Transport.seconds; }, 500);
         document.getElementById('up-file').onchange = async (e) => { const f = e.target.files[0]; const path = `audios/${Date.now()}_${f.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase()}`; await sb.storage.from('audios').upload(path, f); const { data: { publicUrl } } = sb.storage.from('audios').getPublicUrl(path); await sb.from('musicas').insert({ titulo: f.name, audio_url: publicUrl, playlist_id: curPl, pitch: 0 }); loadSongs(); };
 
