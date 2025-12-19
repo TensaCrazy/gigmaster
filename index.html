@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v26.0</title>
+    <title>GIGMASTER PRO | v26.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
@@ -97,10 +97,13 @@
         const SB_KEY = 'sb_publishable_ercRd8vFjpnVyXf0WiPVSw_tWCSmsGm';
         const sb = supabase.createClient(SB_URL, SB_KEY);
         
-        // --- MOTOR COMPATÍVEL COM OPERA GX ---
+        // --- NOVO SETUP DE SINAL (ROUTING) ---
         const player = new Tone.Player();
         const shift = new Tone.PitchShift(0);
-        player.connect(shift).toDestination();
+        
+        // CORRENTE: Player -> PitchShift -> Saída (Destination)
+        player.connect(shift);
+        shift.toDestination();
 
         let curPl = null, curSId = null;
 
@@ -138,22 +141,22 @@
                 </div>`).join('');
         }
 
-        // --- SOLUÇÃO FINAL DE CARREGAMENTO (OPERA GX) ---
+        // --- PLAY FIX ---
         async function playS(url, p, tit, id) {
             try {
-                // Força o navegador a acordar o áudio
                 await Tone.start();
                 curSId = id;
-                document.getElementById('cur-track').innerText = "SINCRONIZANDO...";
+                document.getElementById('cur-track').innerText = "CARREGANDO...";
                 
                 player.stop();
-                // Carrega como Blob para evitar bloqueios de CORS/Opera
+                // Baixa o arquivo para garantir que o Opera não bloqueie o streaming
                 const response = await fetch(url);
                 const blob = await response.blob();
                 const objectUrl = URL.createObjectURL(blob);
                 
                 await player.load(objectUrl);
                 
+                // Aplica o Pitch ANTES de dar o play
                 shift.pitch = p;
                 document.getElementById('p-slide').value = p;
                 document.getElementById('p-val').innerText = p;
@@ -171,8 +174,10 @@
             }
         }
 
+        // --- PITCH SHIFT REALTIME FIX ---
         document.getElementById('p-slide').oninput = (e) => { 
-            const v = parseInt(e.target.value); 
+            const v = parseFloat(e.target.value); 
+            // Garante que o efeito está ligado à saída
             shift.pitch = v; 
             document.getElementById('p-val').innerText = v; 
         };
