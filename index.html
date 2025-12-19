@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v20.5</title>
+    <title>GIGMASTER PRO | v20.6</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -15,50 +15,55 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        /* Auth */
-        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .auth-card { background: var(--surface); padding: 40px; border-radius: 15px; border: 1px solid var(--border); text-align: center; width: 100%; max-width: 320px; }
-        .auth-card input { width: 100%; padding: 14px; margin-bottom: 12px; border-radius: 8px; border: 1px solid var(--border); background: #1a1a1a; color: #fff; }
-
-        /* Header & Dropdown */
         header { height: 60px; padding: 0 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); z-index: 500; }
         .u-badge { background: var(--border); padding: 6px 15px; border-radius: 20px; font-size: 11px; cursor: pointer; position: relative; }
         .drop-menu { position: absolute; top: 50px; right: 0; background: var(--surface); border: 1px solid var(--border); display: none; width: 180px; border-radius: 8px; box-shadow: 0 10px 30px #000; z-index: 600; }
         .drop-menu div { padding: 12px 15px; border-bottom: 1px solid var(--border); font-size: 12px; }
         .drop-menu div:hover { background: var(--green); color: #000; }
 
-        /* Main Layout */
         .main-container { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 260px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
+        .sidebar { width: 280px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
         .main-content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 180px; }
         
-        /* Lists */
-        .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: rgba(255,255,255,0.03); cursor: pointer; font-size: 12px; }
+        /* Playlist Item Refinado */
+        .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: rgba(255,255,255,0.03); cursor: pointer; font-size: 12px; transition: 0.2s; }
         .pl-item:hover { background: rgba(255,255,255,0.06); }
+        .pl-actions { display: flex; gap: 12px; align-items: center; }
+        .pl-actions svg { opacity: 0.4; transition: 0.2s; }
+        .pl-actions svg:hover { opacity: 1; fill: var(--green); }
+
         .song-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
         .song-row.active { border-left: 4px solid var(--green); background: rgba(29,185,84,0.08); color: var(--green); }
 
-        /* Modals */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); }
         .modal-box { background: var(--surface); padding: 25px; border-radius: 12px; border: 1px solid var(--border); width: 100%; max-width: 320px; text-align: center; }
         .modal-box input { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); margin: 15px 0; }
 
-        /* Player */
-        footer { background: var(--surface); border-top: 1px solid var(--border); padding: 15px 25px; position: fixed; bottom: 0; width: 100%; min-height: 150px; z-index: 500; }
+        footer { background: var(--surface); border-top: 1px solid var(--border); padding: 15px 25px; position: fixed; bottom: 0; width: 100%; height: 150px; z-index: 500; }
         .p-wrap { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
         .p-main { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; }
         .play-btn { width: 55px; height: 55px; border-radius: 50%; background: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .play-btn svg { fill: #000; width: 22px; }
+        .btn-slim { padding: 10px 15px; border-radius: 6px; border: 1px solid var(--green); color: var(--green); background: transparent; font-size: 10px; font-weight: 600; cursor: pointer; text-transform: uppercase; }
 
         @media (max-width: 768px) { .sidebar { display: none; } .p-main { grid-template-columns: 1fr 1fr; } .vol-cont { display: none; } }
-        .btn-slim { padding: 10px 15px; border-radius: 6px; border: 1px solid var(--green); color: var(--green); background: transparent; font-size: 10px; font-weight: 600; cursor: pointer; text-transform: uppercase; }
     </style>
 </head>
 <body class="dark-theme">
 
+    <div id="modal-folder" class="modal-overlay">
+        <div class="modal-box">
+            <h3 id="folder-modal-title" style="margin:0; font-weight:400">PASTA</h3>
+            <input type="text" id="folder-input" placeholder="Nome da pasta">
+            <div style="display:flex; gap:10px;">
+                <button class="btn-slim" onclick="closeM('modal-folder')" style="flex:1; border-color:var(--sub); color:var(--sub)">CANCELAR</button>
+                <button class="btn-slim" id="folder-confirm-btn" style="flex:1; background:var(--green); color:#000; border:none;">SALVAR</button>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-nick" class="modal-overlay">
         <div class="modal-box">
-            <h3 style="margin:0; font-weight:400">ALTERAR NICKNAME</h3>
+            <h3 style="margin:0; font-weight:400">NICKNAME</h3>
             <input type="text" id="in-nick" placeholder="Seu novo nome">
             <div style="display:flex; gap:10px;">
                 <button class="btn-slim" onclick="closeM('modal-nick')" style="flex:1; border-color:var(--sub); color:var(--sub)">CANCELAR</button>
@@ -75,20 +80,19 @@
         </div>
     </div>
 
-    <div id="auth-screen">
-        <div class="auth-card">
+    <div id="auth-screen" style="position:fixed; inset:0; background:var(--bg); z-index:2000; display:flex; align-items:center; justify-content:center; padding:20px;">
+        <div class="auth-card" style="background: var(--surface); padding: 40px; border-radius: 15px; border: 1px solid var(--border); text-align: center; width: 100%; max-width: 320px;">
             <h2 style="letter-spacing:4px; margin-bottom:30px; font-weight:300">GIGMASTER</h2>
-            <input type="email" id="a-email" placeholder="E-mail">
-            <input type="password" id="a-pass" placeholder="Senha">
+            <input type="email" id="a-email" placeholder="E-mail" style="width:100%; padding:12px; margin-bottom:10px; border-radius:6px; border:1px solid var(--border); background:#1a1a1a; color:#fff;">
+            <input type="password" id="a-pass" placeholder="Senha" style="width:100%; padding:12px; margin-bottom:20px; border-radius:6px; border:1px solid var(--border); background:#1a1a1a; color:#fff;">
             <button class="btn-slim" onclick="handleAuth('in')" style="width:100%; background:var(--green); color:#000; border:none; margin-bottom:12px; height:50px;">LOGAR</button>
             <button class="btn-slim" onclick="handleAuth('up')" style="width:100%; border-color:#444; color:var(--sub)">CRIAR CONTA</button>
-            <p id="a-msg" style="font-size:11px; color:var(--green); margin-top:15px;"></p>
         </div>
     </div>
 
     <div id="app" style="display:none; flex-direction:column; height:100vh;">
         <header>
-            <div style="font-weight:600; font-size:14px;">GIGMASTER <span style="color:var(--green)">PRO</span></div>
+            <div style="font-weight:600; letter-spacing:1px; font-size:14px;">GIGMASTER <span style="color:var(--green)">PRO</span></div>
             <div class="u-badge" onclick="toggleD()">
                 <span id="u-display">PERFIL</span> ▼
                 <div class="drop-menu" id="u-drop">
@@ -102,7 +106,7 @@
 
         <div class="main-container">
             <div class="sidebar">
-                <button class="btn-slim" style="width:100%" onclick="addFold()">+ NOVA PASTA</button>
+                <button class="btn-slim" style="width:100%" onclick="addFoldUI()">+ NOVA PASTA</button>
                 <div id="pl-list" style="margin-top:20px;"></div>
             </div>
             <div class="main-content">
@@ -183,20 +187,52 @@
             document.getElementById('u-display').innerText = n.toUpperCase(); closeM('modal-nick');
         }
 
+        // --- GESTÃO DE PASTAS (RENOMEAR ADICIONADO) ---
         async function loadPl() {
             const { data: { user } } = await sb.auth.getUser(); if(!user) return;
             const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
             document.getElementById('pl-list').innerHTML = data.map(p => `
                 <div class="pl-item" onclick="selPl(${p.id},'${p.nome}')">
                     <span>📂 ${p.nome.toUpperCase()}</span>
-                    <span onclick="event.stopPropagation(); delPl(${p.id},'${p.nome}')" style="opacity:0.4">✕</span>
+                    <div class="pl-actions">
+                        <svg onclick="event.stopPropagation(); renameFoldUI(${p.id}, '${p.nome}')" viewBox="0 0 24 24" width="14" fill="currentColor" title="Renomear"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        <svg onclick="event.stopPropagation(); delPl(${p.id},'${p.nome}')" viewBox="0 0 24 24" width="14" fill="currentColor" title="Excluir"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </div>
                 </div>`).join('');
         }
 
-        function addFold() { const n = prompt("Nome da Pasta:"); if(n) sb.auth.getUser().then(({data}) => sb.from('playlists').insert({nome:n, user_id:data.user.id}).then(loadPl)); }
+        function addFoldUI() {
+            document.getElementById('folder-modal-title').innerText = "NOVA PASTA";
+            document.getElementById('folder-input').value = "";
+            openM('modal-folder');
+            document.getElementById('folder-confirm-btn').onclick = async () => {
+                const name = document.getElementById('folder-input').value;
+                if(!name) return;
+                const { data: { user } } = await sb.auth.getUser();
+                await sb.from('playlists').insert({ nome: name, user_id: user.id });
+                closeM('modal-folder');
+                loadPl();
+            };
+        }
+
+        function renameFoldUI(id, oldName) {
+            document.getElementById('folder-modal-title').innerText = "RENOMEAR PASTA";
+            document.getElementById('folder-input').value = oldName;
+            openM('modal-folder');
+            document.getElementById('folder-confirm-btn').onclick = async () => {
+                const newName = document.getElementById('folder-input').value;
+                if(!newName || newName === oldName) return closeM('modal-folder');
+                await sb.from('playlists').update({ nome: newName }).eq('id', id);
+                if(curPl === id) document.getElementById('pl-title').innerText = newName;
+                closeM('modal-folder');
+                loadPl();
+            };
+        }
+
         async function delPl(id, n) { if(confirm(`Apagar pasta "${n}"?`)) { await sb.from('musicas').delete().eq('playlist_id', id); await sb.from('playlists').delete().eq('id', id); loadPl(); } }
         function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; document.getElementById('btn-up').style.display = 'block'; document.getElementById('btn-zip').style.display = 'block'; loadSongs(); }
 
+        // --- GESTÃO DE MÚSICAS ---
         async function loadSongs() {
             const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl).order('titulo'); allS = data;
             document.getElementById('song-list').innerHTML = data.map(s => `
@@ -222,8 +258,9 @@
         async function saveP() { if(curSId) { await sb.from('musicas').update({pitch: parseInt(document.getElementById('p-slide').value)}).eq('id', curSId); loadSongs(); } }
         async function delS(id) { if(confirm("Apagar música?")) { await sb.from('musicas').delete().eq('id', id); loadSongs(); } }
 
+        // --- DOWNLOADS ---
         async function dlZip() {
-            const zip = new JSZip(); for (let s of allS) { const r = await fetch(s.audio_url); const b = await r.blob(); zip.file(`${s.titulo}.mp3`, b); }
+            const zip = new JSZip(); for (let s of allS) { try { const r = await fetch(s.audio_url); const b = await r.blob(); zip.file(`${s.titulo}.mp3`, b); } catch(e){} }
             const c = await zip.generateAsync({type:"blob"}); saveAs(c, `playlist.zip`);
         }
 
@@ -249,6 +286,7 @@
             return bA;
         }
 
+        // --- CONTROLES ---
         document.getElementById('play-btn').onclick = () => {
             if(Tone.Transport.state === "started") { Tone.Transport.pause(); document.getElementById('svg-play').innerHTML = '<path fill="#000" d="M8 5v14l11-7z"/>'; }
             else { Tone.Transport.start(); document.getElementById('svg-play').innerHTML = '<path fill="#000" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; }
