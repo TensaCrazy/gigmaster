@@ -209,9 +209,10 @@ async function loadPlaylists(){
  /* AUDIO & SONGS */
  function routeAudio(p){ player.disconnect(); p==0?player.toDestination():(pitchNode.pitch=p,player.connect(pitchNode)); }
  
- async function playSong(url,t,p){
-   document.getElementById("now").innerText="CARREGANDO...";
-  try{
+async function playSong(url,t,p){
+  document.getElementById("now").innerText="CARREGANDO...";
+ try{
+    await Tone.start();
     player.stop();
     // Use Player.load which handles buffering and is simpler
     await player.load(url);
@@ -230,17 +231,17 @@ async function loadPlaylists(){
   }
  }
  
- function togglePlay(){
-   if(!player.buffer?.loaded)return;
-   Tone.start();
-   if(player.state==="started"){
-     offset+=Tone.now()-lastStart; player.stop();
-     document.getElementById("play-btn").innerText="▶";
-   }else{
-     lastStart=Tone.now(); player.start(0,offset);
-     document.getElementById("play-btn").innerText="❚❚";
-   }
- }
+async function togglePlay(){
+  if(!player.buffer?.loaded)return;
+  await Tone.start();
+  if(player.state==="started"){
+    offset+=Tone.now()-lastStart; player.stop();
+    document.getElementById("play-btn").innerText="▶";
+  }else{
+    lastStart=Tone.now(); player.start(0,offset);
+    document.getElementById("play-btn").innerText="❚❚";
+  }
+}
  
  const sk=document.getElementById("seek");
  sk.onmousedown = sk.ontouchstart = () => dragging=true;
