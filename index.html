@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v27.7</title>
+    <title>GIGMASTER PRO | v27.8</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
     <style>
         :root { --green: #1db954; --bg: #0b0b0b; --surface: #121212; --border: #282828; --text: #fff; --sub: #888; }
@@ -17,18 +18,19 @@
         .u-badge { background: var(--border); padding: 6px 15px; border-radius: 20px; font-size: 11px; cursor: pointer; position: relative; }
         .drop-menu { position: absolute; top: 50px; right: 0; background: var(--surface); border: 1px solid var(--border); display: none; width: 200px; border-radius: 12px; box-shadow: 0 10px 30px #000; z-index: 600; overflow: hidden; }
         .drop-menu div { padding: 14px 18px; border-bottom: 1px solid var(--border); font-size: 11px; cursor: pointer; }
-        .drop-menu div:hover { background: rgba(255,255,255,0.05); }
 
-        .sidebar { width: 280px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
+        .sidebar { width: 300px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
         .main-content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 180px; }
         
-        .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 10px; background: rgba(255,255,255,0.03); cursor: pointer; font-size: 11px; }
+        .pl-item { display: flex; flex-direction: column; padding: 12px; margin-bottom: 8px; border-radius: 10px; background: rgba(255,255,255,0.03); cursor: pointer; font-size: 11px; transition: 0.2s; }
         .pl-item.active { background: var(--green); color: #fff; }
-        .pl-actions { display: flex; gap: 8px; opacity: 0.6; }
+        .pl-item:hover { background: rgba(255,255,255,0.08); }
+        .pl-header { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .pl-actions { display: flex; gap: 8px; margin-top: 8px; opacity: 0.7; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; }
+        .pl-actions svg:hover { fill: #fff; transform: scale(1.1); }
 
         .song-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
         .song-row.active { border-left: 4px solid var(--green); background: rgba(29, 185, 84, 0.1); color: var(--green); }
-        .song-actions { display: flex; gap: 12px; align-items: center; }
 
         footer { background: var(--surface); border-top: 1px solid var(--border); padding: 15px 25px; position: fixed; bottom: 0; width: 100%; height: 150px; z-index: 500; }
         #toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: var(--green); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 12px; font-weight: 600; display: none; z-index: 4000; }
@@ -54,8 +56,6 @@
                 <div class="drop-menu" id="u-drop">
                     <div onclick="toggleT()">🌓 TEMA</div>
                     <div onclick="uiRenameNick()">👤 NICKNAME</div>
-                    <div onclick="openM('modal-bug')">🐞 BUG</div>
-                    <div onclick="openM('modal-pix')">💎 APOIAR</div>
                     <div onclick="logout()" style="color:#ff4d4d">🚪 SAIR</div>
                 </div>
             </div>
@@ -92,11 +92,9 @@
         const SB_KEY = 'sb_publishable_ercRd8vFjpnVyXf0WiPVSw_tWCSmsGm';
         const sb = supabase.createClient(SB_URL, SB_KEY);
         
-        // --- MOTOR DE ÁUDIO COM BYPASS INTELIGENTE ---
         const shift = new Tone.PitchShift(0).toDestination();
         const player = new Tone.Player();
-
-        let curPl = null, curSId = null, isDragging = false, lastStart = 0, offset = 0;
+        let curPl = null, curSId = null, lastStart = 0, offset = 0;
 
         async function checkSession() {
             const { data: { session } } = await sb.auth.getSession();
@@ -108,13 +106,32 @@
             const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
             document.getElementById('pl-list').innerHTML = (data || []).map(p => `
                 <div class="pl-item ${curPl == p.id ? 'active' : ''}" onclick="selPl(${p.id},'${p.nome}')">
-                    <span>📂 ${p.nome.toUpperCase()}</span>
+                    <div class="pl-header"><span>📂 ${p.nome.toUpperCase()}</span></div>
                     <div class="pl-actions">
-                        <svg onclick="event.stopPropagation(); copyLink(${p.id})" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
-                        <svg onclick="event.stopPropagation(); uiRenameFolder(${p.id})" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
-                        <svg onclick="event.stopPropagation(); uiDelFolder(${p.id})" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        <svg onclick="event.stopPropagation(); copyLink(${p.id})" viewBox="0 0 24 24" width="14" fill="currentColor" title="Compartilhar"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+                        <svg onclick="event.stopPropagation(); uiRenameFolder(${p.id})" viewBox="0 0 24 24" width="14" fill="currentColor" title="Renomear"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
+                        <svg onclick="event.stopPropagation(); downloadZip(${p.id}, '${p.nome}')" viewBox="0 0 24 24" width="14" fill="currentColor" title="Baixar .ZIP"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        <svg onclick="event.stopPropagation(); uiDelFolder(${p.id})" viewBox="0 0 24 24" width="14" fill="currentColor" title="Excluir"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                     </div>
                 </div>`).join('');
+        }
+
+        async function downloadZip(id, name) {
+            showToast("PREPARANDO ZIP...");
+            const { data } = await sb.from('musicas').select('*').eq('playlist_id', id);
+            if (!data || data.length === 0) return showToast("PASTA VAZIA!");
+            
+            const zip = new JSZip();
+            for (const s of data) {
+                const res = await fetch(s.audio_url);
+                const blob = await res.blob();
+                zip.file(s.titulo, blob);
+            }
+            const content = await zip.generateAsync({type:"blob"});
+            const url = window.URL.createObjectURL(content);
+            const a = document.createElement('a');
+            a.href = url; a.download = `${name}.zip`; a.click();
+            showToast("DOWNLOAD INICIADO!");
         }
 
         function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; document.getElementById('upload-section').style.display='block'; loadSongs(); loadPl(); }
@@ -123,5 +140,79 @@
             document.getElementById('song-list').innerHTML = (data || []).map(s => `
                 <div class="song-row ${curSId==s.id?'active':''}" onclick="playS('${s.audio_url}',${s.pitch},'${s.titulo}',${s.id})">
                     <div style="flex:1"><b>${s.titulo}</b> <small style="opacity:0.5; margin-left:8px;">${s.pitch} ST</small></div>
-                    <div class="song-actions">
-                        <svg onclick="event.stopPropagation(); window.open('${
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <svg onclick="event.stopPropagation(); window.open('${s.audio_url}')" viewBox="0 0 24 24" width="16" fill="currentColor" style="opacity:0.4"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        <span onclick="event.stopPropagation(); uiDelSong(${s.id})" style="opacity:0.3">✕</span>
+                    </div>
+                </div>`).join('');
+        }
+
+        async function playS(url, p, tit, id) {
+            curSId = id; document.getElementById('cur-track').innerText = "CARREGANDO...";
+            player.stop();
+            const res = await fetch(url);
+            const buffer = await new Tone.ToneAudioBuffer().load(URL.createObjectURL(await res.blob()));
+            player.buffer = buffer;
+            updateAudioPath(p);
+            document.getElementById('p-slide').value = p; document.getElementById('p-val').innerText = p;
+            document.getElementById('seek').max = buffer.duration;
+            document.getElementById('cur-track').innerText = tit;
+            startAt(0); loadSongs();
+        }
+
+        function updateAudioPath(p) {
+            player.disconnect();
+            if (p === 0) player.toDestination();
+            else { shift.pitch = p; player.connect(shift); }
+        }
+
+        function startAt(secs) {
+            player.stop(); offset = secs; lastStart = Tone.now();
+            player.start(0, secs);
+            document.getElementById('play-path').setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
+        }
+
+        const sk = document.getElementById('seek');
+        sk.onchange = () => { if(player.buffer.loaded) startAt(parseFloat(sk.value)); };
+        setInterval(() => { if (player.state === "started") sk.value = Tone.now() - lastStart + offset; }, 50);
+
+        function showModal({title, text, input, onConfirm}) {
+            const o = document.getElementById('master-modal'), i = document.getElementById('mm-input');
+            document.getElementById('mm-title').innerText = title; document.getElementById('mm-text').innerText = text || "";
+            i.style.display = input ? 'block' : 'none'; o.style.display = 'flex';
+            document.getElementById('mm-confirm').onclick = () => { onConfirm(i.value || true); o.style.display = 'none'; };
+            document.getElementById('mm-cancel').onclick = () => o.style.display = 'none';
+        }
+
+        function uiAddFolder() { showModal({ title: "NOVA PASTA", input: true, onConfirm: async (n) => { const {data:{user}} = await sb.auth.getUser(); await sb.from('playlists').insert([{nome:n, user_id:user.id}]); loadPl(); }}); }
+        function uiRenameFolder(id) { showModal({ title: "RENOMEAR", input: true, onConfirm: async (n) => { await sb.from('playlists').update({nome:n}).eq('id', id); loadPl(); }}); }
+        function uiDelFolder(id) { showModal({ title: "EXCLUIR", onConfirm: async () => { await sb.from('musicas').delete().eq('playlist_id', id); await sb.from('playlists').delete().eq('id', id); loadPl(); }}); }
+        function uiDelSong(id) { showModal({ title: "REMOVER", onConfirm: async () => { await sb.from('musicas').delete().eq('id', id); loadSongs(); }}); }
+        function uiRenameNick() { showModal({ title: "NICKNAME", input: true, onConfirm: async (n) => { const {data:{user}} = await sb.auth.getUser(); await sb.from('profiles').upsert({id:user.id, username:n}); document.getElementById('u-display').innerText = n.toUpperCase(); }}); }
+        
+        function copyLink(id) { navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?share=${id}`).then(() => showToast("LINK COPIADO!")); }
+        function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2000); }
+        function toggleD() { const d = document.getElementById('u-drop'); d.style.display = d.style.display==='block'?'none':'block'; }
+        function toggleT() { document.body.classList.toggle('light-theme'); }
+        async function logout() { await sb.auth.signOut(); location.reload(); }
+        async function saveP() { if(curSId) { await sb.from('musicas').update({pitch: parseInt(document.getElementById('p-slide').value)}).eq('id', curSId); showToast("TOM SALVO!"); loadSongs(); } }
+
+        document.getElementById('play-btn').onclick = () => {
+            if (player.state === "started") { offset = Tone.now() - lastStart + offset; player.stop(); document.getElementById('play-path').setAttribute('d', 'M8 5v14l11-7z'); }
+            else if (player.buffer.loaded) startAt(offset);
+        };
+
+        document.getElementById('up-file').onchange = async (e) => {
+            const f = e.target.files[0]; if(!f) return;
+            showToast("ENVIANDO...");
+            const path = `audios/${Date.now()}_${f.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase()}`;
+            await sb.storage.from('audios').upload(path, f);
+            const { data: { publicUrl } } = sb.storage.from('audios').getPublicUrl(path);
+            await sb.from('musicas').insert([{ titulo: f.name, audio_url: publicUrl, playlist_id: curPl, pitch: 0 }]);
+            loadSongs(); showToast("CONCLUÍDO!");
+        };
+
+        checkSession();
+    </script>
+</body>
+</html>
