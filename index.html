@@ -3,78 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v18.1</title>
-    
+    <title>GIGMASTER PRO | v18.4</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;800&display=swap" rel="stylesheet">
     <style>
-        :root { --green: #1db954; --bg: #000; --text: #fff; --border: #333; --red: #ff4444; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        :root { --green: #1db954; --bg: #0b0b0b; --surface: #121212; --text: #ececec; --border: #282828; --red: #ff4d4d; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 15px; }
-        .btn { padding: 10px 20px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; }
+        /* Auth Modernizado */
+        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
+        .gm-logo { font-weight: 800; font-size: 2rem; letter-spacing: -2px; margin-bottom: 20px; }
+        .gm-logo span { color: var(--green); }
+        
+        input { padding: 14px; border-radius: 4px; border: 1px solid var(--border); background: #1a1a1a; color: #fff; width: 300px; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--green); }
+        .btn { padding: 12px 24px; border-radius: 4px; border: none; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
         .btn-green { background: var(--green); color: #000; }
-        .btn-outline { background: transparent; color: #fff; border: 1px solid #555; }
-        input { padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #111; color: #fff; width: 280px; }
+        .btn-green:hover { filter: brightness(1.2); }
+        .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+        .btn-outline:hover { background: var(--border); }
 
         #app { display: none; flex: 1; flex-direction: column; height: 100vh; }
-        header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        header { padding: 15px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); }
         .main-container { display: flex; flex: 1; overflow: hidden; }
         
-        .sidebar { width: 260px; border-right: 1px solid var(--border); padding: 15px; background: #080808; overflow-y: auto; }
-        .main-content { flex: 1; padding: 25px; overflow-y: auto; padding-bottom: 120px; }
+        /* Sidebar e Listas */
+        .sidebar { width: 280px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; padding-bottom: 160px; }
 
-        .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; transition: 0.2s; }
-        .pl-item:hover { background: #1a1a1a; }
-        .pl-item.active { background: rgba(29, 185, 84, 0.1); color: var(--green); }
+        .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 6px; cursor: pointer; margin-bottom: 8px; font-size: 0.9rem; font-weight: 500; color: #b3b3b3; transition: 0.2s; }
+        .pl-item:hover { background: #1a1a1a; color: #fff; }
+        .pl-item.active { background: #282828; color: var(--green); }
 
-        .song-row { padding: 12px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; margin-bottom: 4px; }
-        .song-row:hover { background: rgba(255,255,255,0.05); }
+        .song-row { padding: 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+        .song-row:hover { background: rgba(255,255,255,0.03); }
         .song-info { flex: 1; cursor: pointer; }
-        .del-btn { color: #666; cursor: pointer; padding: 5px 10px; font-size: 14px; transition: 0.2s; }
-        .del-btn:hover { color: var(--red); }
+        .song-info b { font-weight: 500; font-size: 1rem; }
+        .song-info small { color: #888; margin-left: 15px; font-family: monospace; }
 
-        footer { background: #121212; padding: 20px; border-top: 1px solid var(--border); position: fixed; bottom: 0; width: 100%; z-index: 10; }
-        .player-ctrl { display: flex; align-items: center; gap: 20px; justify-content: center; max-width: 900px; margin: 0 auto; }
-        .play-btn { width: 50px; height: 50px; border-radius: 50%; background: #fff; border: none; font-size: 18px; cursor: pointer; }
+        /* Ícones Minimalistas SVG */
+        .icon-btn { background: none; border: none; cursor: pointer; padding: 5px; fill: #666; transition: 0.2s; display: flex; align-items: center; }
+        .icon-btn:hover { fill: var(--green); }
+        .icon-del:hover { fill: var(--red); }
+
+        /* Player Footer */
+        footer { background: #121212; padding: 25px 40px; border-top: 1px solid var(--border); position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
+        .player-ctrl { display: flex; align-items: center; gap: 40px; justify-content: space-between; max-width: 1200px; margin: 0 auto; }
+        
+        .play-btn { width: 56px; height: 56px; border-radius: 50%; background: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .play-btn:hover { transform: scale(1.05); }
+        .play-btn svg { fill: #000; width: 24px; }
+
+        input[type="range"] { -webkit-appearance: none; height: 4px; border-radius: 2px; background: #333; accent-color: var(--green); }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--green); cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="auth-screen">
-        <h1>GIGMASTER</h1>
+        <div class="gm-logo">GIG<span>MASTER</span></div>
         <input type="email" id="email" placeholder="E-mail">
         <input type="password" id="pass" placeholder="Senha">
-        <button class="btn btn-green" style="width:280px" onclick="login()">ENTRAR / CRIAR CONTA</button>
+        <button class="btn btn-green" style="width:300px" onclick="login()">Entrar no Backstage</button>
         <p id="msg" style="color:var(--green); font-size:12px;"></p>
     </div>
 
     <div id="app">
         <header>
-            <b>GIGMASTER <span style="color:var(--green)">PRO</span></b>
-            <button class="btn-outline btn" onclick="logout()">SAIR</button>
+            <div class="gm-logo" style="font-size: 1.2rem; margin:0">GIG<span>MASTER</span> PRO</div>
+            <button class="btn btn-outline" style="padding: 8px 16px; font-size: 11px;" onclick="logout()">Logout</button>
         </header>
+
         <div class="main-container">
             <div class="sidebar">
-                <button class="btn btn-outline" style="width:100%" onclick="addPl()">+ NOVA PASTA</button>
-                <div id="pl-list" style="margin-top:20px;"></div>
+                <button class="btn btn-outline" style="width:100%; margin-bottom:20px;" onclick="addPl()">+ Nova Pasta</button>
+                <div id="pl-list"></div>
             </div>
             <div class="main-content">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h2 id="pl-title" style="margin:0">Biblioteca</h2>
-                    <label class="btn btn-green" id="btn-up" style="display:none;">+ MP3 <input type="file" id="up-mp3" hidden></label>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+                    <h2 id="pl-title" style="margin:0; font-weight:800; font-size:1.8rem;">Biblioteca</h2>
+                    <label class="btn btn-green" id="btn-up" style="display:none; font-size:12px;">Importar Audio <input type="file" id="up-mp3" hidden></label>
                 </div>
-                <div id="song-list" style="margin-top:20px;"></div>
+                <div id="song-list"></div>
             </div>
         </div>
+
         <footer>
             <div class="player-ctrl">
-                <div><small>TOM</small><br><input type="range" id="p-slide" min="-7" max="7" value="0" style="width:70px"> <b id="p-val">0</b></div>
-                <button id="play-btn" class="play-btn">▶</button>
-                <div style="flex:1;">
-                    <div id="now-playing" style="font-size:11px; color:#888; text-align:center; margin-bottom:5px;">Nenhuma música tocando</div>
-                    <input type="range" id="seek-slide" value="0" step="0.1" style="width:100%; accent-color:var(--green);">
+                <div style="min-width: 150px;">
+                    <small style="color:#666; font-weight:800; font-size:10px; text-transform:uppercase;">Pitch</small>
+                    <div style="display:flex; align-items:center; gap:12px; margin-top:5px;">
+                        <input type="range" id="p-slide" min="-7" max="7" value="0" style="width:80px">
+                        <span id="p-val" style="font-weight:bold; width:20px; color:var(--green)">0</span>
+                        <button onclick="savePitch()" class="icon-btn" title="Salvar Tom">
+                            <svg viewBox="0 0 24 24" width="18"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; align-items:center; flex:1; max-width:600px; gap:10px;">
+                    <div id="now-playing" style="font-size:12px; color:#aaa; font-weight:500;">Selecione uma faixa</div>
+                    <div style="display:flex; align-items:center; gap:20px; width:100%;">
+                        <button id="play-btn" class="play-btn">
+                            <svg id="svg-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </button>
+                        <input type="range" id="seek-slide" value="0" step="0.1" style="flex:1;">
+                    </div>
+                </div>
+
+                <div style="display:flex; align-items:center; gap:15px; min-width:150px; justify-content: flex-end;">
+                    <svg viewBox="0 0 24 24" width="20" fill="#666"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                    <input type="range" id="v-slide" min="-40" max="6" value="0" style="width:100px">
                 </div>
             </div>
         </footer>
@@ -89,128 +129,118 @@
         const shift = new Tone.PitchShift().toDestination();
         player.connect(shift);
 
-        let curPl = null;
-        let curSongId = null;
+        let curPl = null, curSongId = null;
 
+        // AUTH & CHECK
         async function login() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('pass').value;
+            const email = document.getElementById('email').value, password = document.getElementById('pass').value;
             const { error } = await sb.auth.signInWithPassword({ email, password });
-            if(error) { await sb.auth.signUp({ email, password }); document.getElementById('msg').innerText = "Conta criada! Entre novamente."; } 
+            if(error) { await sb.auth.signUp({ email, password }); document.getElementById('msg').innerText = "Conta criada! Entre agora."; } 
             else { check(); }
         }
-
         async function check() {
             const { data: { session } } = await sb.auth.getSession();
             if(session) { document.getElementById('auth-screen').style.display = 'none'; document.getElementById('app').style.display = 'flex'; loadPl(); }
         }
-
         function logout() { sb.auth.signOut(); location.reload(); }
 
-        // --- GESTÃO DE PLAYLISTS ---
+        // PLAYLISTS
         async function loadPl() {
             const { data: { user } } = await sb.auth.getUser();
             const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
             document.getElementById('pl-list').innerHTML = data.map(p => `
                 <div class="pl-item ${curPl==p.id?'active':''}" onclick="selPl(${p.id},'${p.nome}')">
-                    <span>📂 ${p.nome}</span>
-                    <span class="del-btn" onclick="event.stopPropagation(); delPl(${p.id},'${p.nome}')">🗑️</span>
-                </div>
-            `).join('');
+                    <span>${p.nome}</span>
+                    <button class="icon-btn icon-del" onclick="event.stopPropagation(); delPl(${p.id},'${p.nome}')">
+                        <svg viewBox="0 0 24 24" width="16"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                </div>`).join('');
         }
 
         async function addPl() {
-            const n = prompt("Nome da Pasta:");
-            if(!n) return;
+            const n = prompt("Nome da Pasta:"); if(!n) return;
             const { data: { user } } = await sb.auth.getUser();
-            await sb.from('playlists').insert({ nome: n, user_id: user.id });
-            loadPl();
+            await sb.from('playlists').insert({ nome: n, user_id: user.id }); loadPl();
         }
 
         async function delPl(id, nome) {
-            if(!confirm(`Apagar a pasta "${nome}" e TODAS as músicas dentro dela?`)) return;
+            if(!confirm(`Apagar "${nome}"?`)) return;
             await sb.from('musicas').delete().eq('playlist_id', id);
             await sb.from('playlists').delete().eq('id', id);
-            if(curPl == id) { curPl = null; document.getElementById('song-list').innerHTML = ''; document.getElementById('btn-up').style.display = 'none'; }
             loadPl();
         }
 
-        function selPl(id, n) { 
-            curPl = id; 
-            document.getElementById('pl-title').innerText = n; 
-            document.getElementById('btn-up').style.display = 'block'; 
-            loadSongs(); loadPl(); 
-        }
+        function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; document.getElementById('btn-up').style.display = 'block'; loadSongs(); loadPl(); }
 
-        // --- GESTÃO DE MÚSICAS ---
+        // SONGS
         async function loadSongs() {
+            if(!curPl) return;
             const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl);
             document.getElementById('song-list').innerHTML = data.map(s => `
                 <div class="song-row ${curSongId === s.id ? 'active' : ''}">
                     <div class="song-info" onclick="playSong('${s.audio_url}', ${s.pitch}, '${s.titulo.replace(/'/g, "\\'")}', ${s.id})">
-                        🎵 ${s.titulo} <small style="margin-left:10px; opacity:0.5">Tom: ${s.pitch}</small>
+                        <b>${s.titulo}</b> <small>${s.pitch > 0 ? '+'+s.pitch : s.pitch} ST</small>
                     </div>
-                    <div class="del-btn" onclick="delSong(${s.id}, '${s.titulo.replace(/'/g, "\\'")}')">✖</div>
+                    <button class="icon-btn icon-del" onclick="delSong(${s.id}, '${s.titulo.replace(/'/g, "\\'")}')">
+                        <svg viewBox="0 0 24 24" width="18"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    </button>
                 </div>`).join('');
         }
 
         async function delSong(id, titulo) {
-            if(!confirm(`Remover "${titulo}" da lista?`)) return;
-            await sb.from('musicas').delete().eq('id', id);
-            if(curSongId == id) { player.stop(); Tone.Transport.stop(); }
-            loadSongs();
+            if(!confirm(`Remover "${titulo}"?`)) return;
+            await sb.from('musicas').delete().eq('id', id); loadSongs();
+        }
+
+        async function savePitch() {
+            if(!curSongId) return;
+            const novoPitch = document.getElementById('p-slide').value;
+            const { error } = await sb.from('musicas').update({ pitch: parseInt(novoPitch) }).eq('id', curSongId);
+            if(!error) loadSongs();
         }
 
         async function playSong(url, pitch, titulo, id) {
             try {
                 curSongId = id;
-                document.getElementById('now-playing').innerText = "Carregando...";
-                player.stop();
-                player.unsync();
-                Tone.Transport.stop();
-                
+                document.getElementById('now-playing').innerText = "Loading Audio...";
+                player.stop(); player.unsync(); Tone.Transport.stop();
                 await player.load(url);
                 shift.pitch = pitch;
                 document.getElementById('p-val').innerText = pitch;
                 document.getElementById('p-slide').value = pitch;
                 document.getElementById('seek-slide').max = player.buffer.duration;
                 document.getElementById('now-playing').innerText = titulo;
-                
                 player.sync().start(0);
                 loadSongs();
-            } catch (e) { alert("Erro ao carregar áudio."); }
+            } catch (e) { console.error(e); }
         }
+
+        // CONTROLS
+        document.getElementById('play-btn').onclick = async () => {
+            await Tone.start();
+            if(Tone.Transport.state === "started") {
+                Tone.Transport.pause();
+                document.getElementById('svg-play').innerHTML = '<path d="M8 5v14l11-7z"/>';
+            } else if(player.buffer.loaded) {
+                Tone.Transport.start();
+                document.getElementById('svg-play').innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+            }
+        };
+
+        document.getElementById('v-slide').oninput = (e) => { Tone.Destination.volume.value = parseFloat(e.target.value); };
+        document.getElementById('p-slide').oninput = (e) => { shift.pitch = e.target.value; document.getElementById('p-val').innerText = e.target.value; };
+        document.getElementById('seek-slide').oninput = (e) => { Tone.Transport.seconds = parseFloat(e.target.value); player.seek(Tone.Transport.seconds); };
+        setInterval(() => { if(Tone.Transport.state === "started") document.getElementById('seek-slide').value = Tone.Transport.seconds; }, 500);
 
         document.getElementById('up-mp3').onchange = async (e) => {
             const file = e.target.files[0];
             const cleanName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
             const path = `audios/${Date.now()}_${cleanName}`;
-            
-            document.getElementById('pl-title').innerText = "Subindo...";
-            const { error: upErr } = await sb.storage.from('audios').upload(path, file);
-            if(upErr) return alert("Erro no Storage: " + upErr.message);
-
+            await sb.storage.from('audios').upload(path, file);
             const { data: { publicUrl } } = sb.storage.from('audios').getPublicUrl(path);
             await sb.from('musicas').insert({ titulo: file.name, audio_url: publicUrl, playlist_id: curPl, pitch: 0 });
-            
-            document.getElementById('pl-title').innerText = "Pronto!";
             loadSongs();
         };
-
-        document.getElementById('play-btn').onclick = async () => {
-            await Tone.start();
-            if(Tone.Transport.state === "started") {
-                Tone.Transport.pause();
-                document.getElementById('play-btn').innerText = "▶";
-            } else if(player.buffer.loaded) {
-                Tone.Transport.start();
-                document.getElementById('play-btn').innerText = "⏸";
-            }
-        };
-
-        document.getElementById('p-slide').oninput = (e) => { shift.pitch = e.target.value; document.getElementById('p-val').innerText = e.target.value; };
-        document.getElementById('seek-slide').oninput = (e) => { Tone.Transport.seconds = parseFloat(e.target.value); player.seek(Tone.Transport.seconds); };
-        setInterval(() => { if(Tone.Transport.state === "started") document.getElementById('seek-slide').value = Tone.Transport.seconds; }, 500);
 
         check();
     </script>
