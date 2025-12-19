@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v17.9 GX</title>
+    <title>GIGMASTER PRO | v18.1</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
-        :root { --green: #1db954; --bg: #000; --text: #fff; --border: #333; }
+        :root { --green: #1db954; --bg: #000; --text: #fff; --border: #333; --red: #ff4444; }
         body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
         #auth-screen { position: fixed; inset: 0; background: #000; z-index: 999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 15px; }
-        .btn { padding: 12px 25px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; }
+        .btn { padding: 10px 20px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; }
         .btn-green { background: var(--green); color: #000; }
         .btn-outline { background: transparent; color: #fff; border: 1px solid #555; }
         input { padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #111; color: #fff; width: 280px; }
@@ -22,14 +22,21 @@
         header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .main-container { display: flex; flex: 1; overflow: hidden; }
         
-        .sidebar { width: 250px; border-right: 1px solid var(--border); padding: 20px; background: #080808; }
-        .main-content { flex: 1; padding: 25px; overflow-y: auto; }
+        .sidebar { width: 260px; border-right: 1px solid var(--border); padding: 15px; background: #080808; overflow-y: auto; }
+        .main-content { flex: 1; padding: 25px; overflow-y: auto; padding-bottom: 120px; }
 
-        .song-row { padding: 12px; border-bottom: 1px solid #222; cursor: pointer; display: flex; justify-content: space-between; }
-        .active-song { color: var(--green); background: rgba(29, 185, 84, 0.1); }
+        .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; transition: 0.2s; }
+        .pl-item:hover { background: #1a1a1a; }
+        .pl-item.active { background: rgba(29, 185, 84, 0.1); color: var(--green); }
 
-        footer { background: #121212; padding: 20px; border-top: 1px solid var(--border); position: fixed; bottom: 0; width: 100%; }
-        .player-ctrl { display: flex; align-items: center; gap: 20px; justify-content: center; max-width: 800px; margin: 0 auto; }
+        .song-row { padding: 12px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; margin-bottom: 4px; }
+        .song-row:hover { background: rgba(255,255,255,0.05); }
+        .song-info { flex: 1; cursor: pointer; }
+        .del-btn { color: #666; cursor: pointer; padding: 5px 10px; font-size: 14px; transition: 0.2s; }
+        .del-btn:hover { color: var(--red); }
+
+        footer { background: #121212; padding: 20px; border-top: 1px solid var(--border); position: fixed; bottom: 0; width: 100%; z-index: 10; }
+        .player-ctrl { display: flex; align-items: center; gap: 20px; justify-content: center; max-width: 900px; margin: 0 auto; }
         .play-btn { width: 50px; height: 50px; border-radius: 50%; background: #fff; border: none; font-size: 18px; cursor: pointer; }
     </style>
 </head>
@@ -54,8 +61,8 @@
                 <div id="pl-list" style="margin-top:20px;"></div>
             </div>
             <div class="main-content">
-                <div style="display:flex; justify-content:space-between;">
-                    <h2 id="pl-title">Biblioteca</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2 id="pl-title" style="margin:0">Biblioteca</h2>
                     <label class="btn btn-green" id="btn-up" style="display:none;">+ MP3 <input type="file" id="up-mp3" hidden></label>
                 </div>
                 <div id="song-list" style="margin-top:20px;"></div>
@@ -66,8 +73,8 @@
                 <div><small>TOM</small><br><input type="range" id="p-slide" min="-7" max="7" value="0" style="width:70px"> <b id="p-val">0</b></div>
                 <button id="play-btn" class="play-btn">▶</button>
                 <div style="flex:1;">
-                    <div id="now-playing" style="font-size:11px; color:#888; text-align:center;">Selecione uma música</div>
-                    <input type="range" id="seek-slide" value="0" step="0.1" style="width:100%;">
+                    <div id="now-playing" style="font-size:11px; color:#888; text-align:center; margin-bottom:5px;">Nenhuma música tocando</div>
+                    <input type="range" id="seek-slide" value="0" step="0.1" style="width:100%; accent-color:var(--green);">
                 </div>
             </div>
         </footer>
@@ -78,8 +85,7 @@
         const SB_KEY = 'sb_publishable_ercRd8vFjpnVyXf0WiPVSw_tWCSmsGm';
         const sb = supabase.createClient(SB_URL, SB_KEY);
         
-        // CORREÇÃO OPERA GX: Conexão forçada ao Destination
-        const player = new Tone.Player().toDestination();
+        const player = new Tone.Player();
         const shift = new Tone.PitchShift().toDestination();
         player.connect(shift);
 
@@ -90,7 +96,7 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('pass').value;
             const { error } = await sb.auth.signInWithPassword({ email, password });
-            if(error) { await sb.auth.signUp({ email, password }); document.getElementById('msg').innerText = "Conta criada! Logue agora."; } 
+            if(error) { await sb.auth.signUp({ email, password }); document.getElementById('msg').innerText = "Conta criada! Entre novamente."; } 
             else { check(); }
         }
 
@@ -101,62 +107,98 @@
 
         function logout() { sb.auth.signOut(); location.reload(); }
 
+        // --- GESTÃO DE PLAYLISTS ---
         async function loadPl() {
             const { data: { user } } = await sb.auth.getUser();
             const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
-            document.getElementById('pl-list').innerHTML = data.map(p => `<div onclick="selPl(${p.id},'${p.nome}')" style="cursor:pointer; padding:10px;" class="${curPl==p.id?'active-song':''}">📂 ${p.nome}</div>`).join('');
+            document.getElementById('pl-list').innerHTML = data.map(p => `
+                <div class="pl-item ${curPl==p.id?'active':''}" onclick="selPl(${p.id},'${p.nome}')">
+                    <span>📂 ${p.nome}</span>
+                    <span class="del-btn" onclick="event.stopPropagation(); delPl(${p.id},'${p.nome}')">🗑️</span>
+                </div>
+            `).join('');
         }
 
         async function addPl() {
-            const n = prompt("Nome:");
+            const n = prompt("Nome da Pasta:");
+            if(!n) return;
             const { data: { user } } = await sb.auth.getUser();
             await sb.from('playlists').insert({ nome: n, user_id: user.id });
             loadPl();
         }
 
-        function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; document.getElementById('btn-up').style.display = 'block'; loadSongs(); loadPl(); }
+        async function delPl(id, nome) {
+            if(!confirm(`Apagar a pasta "${nome}" e TODAS as músicas dentro dela?`)) return;
+            await sb.from('musicas').delete().eq('playlist_id', id);
+            await sb.from('playlists').delete().eq('id', id);
+            if(curPl == id) { curPl = null; document.getElementById('song-list').innerHTML = ''; document.getElementById('btn-up').style.display = 'none'; }
+            loadPl();
+        }
 
+        function selPl(id, n) { 
+            curPl = id; 
+            document.getElementById('pl-title').innerText = n; 
+            document.getElementById('btn-up').style.display = 'block'; 
+            loadSongs(); loadPl(); 
+        }
+
+        // --- GESTÃO DE MÚSICAS ---
         async function loadSongs() {
             const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl);
             document.getElementById('song-list').innerHTML = data.map(s => `
-                <div onclick="playSong('${s.audio_url}', ${s.pitch}, '${s.titulo.replace(/'/g, "\\'")}', ${s.id})" class="song-row ${curSongId === s.id ? 'active-song' : ''}">
-                    <span>🎵 ${s.titulo}</span><b>${s.pitch}</b>
+                <div class="song-row ${curSongId === s.id ? 'active' : ''}">
+                    <div class="song-info" onclick="playSong('${s.audio_url}', ${s.pitch}, '${s.titulo.replace(/'/g, "\\'")}', ${s.id})">
+                        🎵 ${s.titulo} <small style="margin-left:10px; opacity:0.5">Tom: ${s.pitch}</small>
+                    </div>
+                    <div class="del-btn" onclick="delSong(${s.id}, '${s.titulo.replace(/'/g, "\\'")}')">✖</div>
                 </div>`).join('');
+        }
+
+        async function delSong(id, titulo) {
+            if(!confirm(`Remover "${titulo}" da lista?`)) return;
+            await sb.from('musicas').delete().eq('id', id);
+            if(curSongId == id) { player.stop(); Tone.Transport.stop(); }
+            loadSongs();
         }
 
         async function playSong(url, pitch, titulo, id) {
             try {
                 curSongId = id;
                 document.getElementById('now-playing').innerText = "Carregando...";
-                
-                // Reinicia player para evitar sobreposição no Opera
                 player.stop();
-                await player.load(url);
+                player.unsync();
+                Tone.Transport.stop();
                 
+                await player.load(url);
                 shift.pitch = pitch;
                 document.getElementById('p-val').innerText = pitch;
                 document.getElementById('p-slide').value = pitch;
                 document.getElementById('seek-slide').max = player.buffer.duration;
                 document.getElementById('now-playing').innerText = titulo;
                 
-                // Sincronização forçada
                 player.sync().start(0);
                 loadSongs();
-            } catch (e) { alert("Erro de áudio. Verifique as Policies no Supabase."); }
+            } catch (e) { alert("Erro ao carregar áudio."); }
         }
 
         document.getElementById('up-mp3').onchange = async (e) => {
             const file = e.target.files[0];
             const cleanName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
             const path = `audios/${Date.now()}_${cleanName}`;
-            await sb.storage.from('audios').upload(path, file);
+            
+            document.getElementById('pl-title').innerText = "Subindo...";
+            const { error: upErr } = await sb.storage.from('audios').upload(path, file);
+            if(upErr) return alert("Erro no Storage: " + upErr.message);
+
             const { data: { publicUrl } } = sb.storage.from('audios').getPublicUrl(path);
             await sb.from('musicas').insert({ titulo: file.name, audio_url: publicUrl, playlist_id: curPl, pitch: 0 });
+            
+            document.getElementById('pl-title').innerText = "Pronto!";
             loadSongs();
         };
 
         document.getElementById('play-btn').onclick = async () => {
-            await Tone.start(); // Acorda o áudio no Opera GX
+            await Tone.start();
             if(Tone.Transport.state === "started") {
                 Tone.Transport.pause();
                 document.getElementById('play-btn').innerText = "▶";
@@ -168,8 +210,8 @@
 
         document.getElementById('p-slide').oninput = (e) => { shift.pitch = e.target.value; document.getElementById('p-val').innerText = e.target.value; };
         document.getElementById('seek-slide').oninput = (e) => { Tone.Transport.seconds = parseFloat(e.target.value); player.seek(Tone.Transport.seconds); };
-
         setInterval(() => { if(Tone.Transport.state === "started") document.getElementById('seek-slide').value = Tone.Transport.seconds; }, 500);
+
         check();
     </script>
 </body>
