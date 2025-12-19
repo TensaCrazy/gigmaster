@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GIGMASTER PRO | v29.4</title>
+<title>GIGMASTER PRO | v29.5</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,16 +17,19 @@ body.light{--green:#e91e63;--bg:#e0e0e0;--surface:#f5f5f5;--border:#ccc;--text:#
 *{box-sizing:border-box}
 body{margin:0;font-family:Inter,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
 
+/* LOGIN */
 #auth{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:9999}
 .auth-box{width:320px;text-align:center}
 .auth-box input{width:100%;padding:14px;margin-bottom:10px;border-radius:10px;background:#111;border:1px solid #333;color:#fff}
 
+/* APP */
 #app{display:none;flex-direction:column;height:100vh}
 header{height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--border)}
 
 .u-badge{background:var(--border);padding:6px 14px;border-radius:20px;font-size:11px;cursor:pointer;position:relative}
 .drop-menu{display:none;position:absolute;top:45px;right:0;width:200px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;z-index:600}
 .drop-menu div{padding:14px 18px;font-size:11px;border-bottom:1px solid var(--border);cursor:pointer}
+.drop-menu div:hover{background:rgba(255,255,255,.05)}
 
 main{flex:1;display:flex;overflow:hidden}
 aside{width:280px;border-right:1px solid var(--border);padding:15px;overflow-y:auto}
@@ -37,9 +40,10 @@ button{cursor:pointer;border:none;border-radius:10px}
 
 .playlist{padding:12px;border-radius:10px;background:#1b1b1b;margin-bottom:8px;cursor:pointer}
 .playlist.active{background:var(--green)}
-.pl-tools{display:flex;gap:10px;margin-top:6px;font-size:10px;opacity:.6}
+.pl-tools{display:flex;gap:12px;margin-top:8px;font-size:10px;opacity:.7;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px}
 
-.song{padding:12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;cursor:pointer}
+.song{padding:15px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.song-actions{display:flex;gap:15px;align-items:center}
 
 footer{height:140px;border-top:1px solid var(--border);padding:15px;background:var(--surface)}
 .controls{display:flex;justify-content:center;gap:20px;margin-top:10px}
@@ -73,7 +77,8 @@ input[type=range]{accent-color:var(--green)}
     <span id="u-display">PERFIL</span> ▼
     <div class="drop-menu" id="u-drop">
       <div onclick="toggleTheme()">🌓 TEMA</div>
-      <div onclick="alert('Bug relatado!')">🐞 BUG</div>
+      <div onclick="toast('Relatado! Obrigado.')">🐞 RELATAR BUG</div>
+      <div onclick="toast('PIX: gigmaster@pro.br')">💎 APOIAR PIX</div>
       <div onclick="logout()" style="color:#ff4d4d">🚪 SAIR</div>
     </div>
   </div>
@@ -113,7 +118,7 @@ input[type=range]{accent-color:var(--green)}
 <script>
 const sb = supabase.createClient("https://mdtqwugkaonipbfqqvhj.supabase.co", "sb_publishable_ercRd8vFjpnVyXf0WiPVSw_tWCSmsGm");
 
-/* AUDIO ENGINE */
+/* MOTOR DE ÁUDIO */
 const player=new Tone.Player();
 const pitchNode=new Tone.PitchShift(0).toDestination();
 let offset=0, lastStart=0, dragging=false, curPl=null;
@@ -148,7 +153,7 @@ sb.auth.onAuthStateChange((e,session)=>{
   } else { auth.style.display="flex"; app.style.display="none"; }
 });
 
-/* PLAYBACK */
+/* PLAYBACK & SEEK */
 async function playSong(url,t,p){
   document.getElementById("now").innerText="CARREGANDO...";
   player.stop();
@@ -175,7 +180,6 @@ function togglePlay(){
   }
 }
 
-/* SEEK & CONTROLS */
 const sk=document.getElementById("seek");
 sk.onmousedown = sk.ontouchstart = () => dragging=true;
 sk.onchange = e => {
@@ -187,7 +191,7 @@ setInterval(()=>{ if(player.state==="started" && !dragging) sk.value=offset+(Ton
 document.getElementById("p-slide").oninput = e => { routeAudio(parseInt(e.target.value)); document.getElementById("p-val").innerText=e.target.value; };
 document.getElementById("v-slide").oninput = e => Tone.Destination.volume.value = e.target.value;
 
-/* GESTÃO */
+/* GESTÃO DE PLAYLISTS E DOWNLOADS */
 async function loadPlaylists(){
   const {data:{user}}=await sb.auth.getUser();
   const {data}=await sb.from("playlists").select("*").eq("user_id",user.id).order("nome");
@@ -208,13 +212,17 @@ async function loadSongs(){
   document.getElementById("songs-container").innerHTML=(data||[]).map(s=>`
     <div class="song" onclick="playSong('${s.audio_url}','${s.titulo}',${s.pitch})">
       <span>${s.titulo}</span>
-      <small onclick="event.stopPropagation(); deleteSong(${s.id})" style="opacity:.4">✕</small>
+      <div class="song-actions">
+        <svg onclick="event.stopPropagation(); window.open('${s.audio_url}')" viewBox="0 0 24 24" width="16" fill="currentColor" style="opacity:0.6"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        <span onclick="event.stopPropagation(); deleteSong(${s.id})" style="opacity:.4">✕</span>
+      </div>
     </div>`).join("");
 }
 
 async function downloadZip(id, name) {
     toast("📦 Gerando ZIP...");
     const { data } = await sb.from('musicas').select('*').eq('playlist_id', id);
+    if(!data.length) return toast("Pasta vazia!");
     const zip = new JSZip();
     for (const s of data) {
         const res = await fetch(s.audio_url);
@@ -235,7 +243,7 @@ async function deleteSong(id){ await sb.from("musicas").delete().eq("id",id); lo
 
 function toggleMenu(){ const m=document.getElementById("u-drop"); m.style.display=m.style.display==="block"?"none":"block"; }
 function toggleTheme(){ document.body.classList.toggle("light") }
-function toast(t){ const x=document.getElementById("toast"); x.innerText=t; x.style.display="block"; setTimeout(()=>x.style.display="none",2000) }
+function toast(t){ const x=document.getElementById("toast"); x.innerText=t; x.style.display="block"; setTimeout(()=>x.style.display="none",3000) }
 
 upload.onchange=async e=>{
   const f=e.target.files[0]; if(!f)return;
@@ -244,7 +252,7 @@ upload.onchange=async e=>{
   await sb.storage.from("audios").upload(path,f);
   const {data:{publicUrl}}=sb.storage.from("audios").getPublicUrl(path);
   await sb.from("musicas").insert([{titulo:f.name,audio_url:publicUrl,playlist_id:curPl,pitch:0}]);
-  loadSongs(); toast("Pronto!");
+  loadSongs(); toast("Upload concluído!");
 };
 </script>
 </body>
