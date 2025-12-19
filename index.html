@@ -212,15 +212,22 @@ async function loadPlaylists(){
   if(error) { console.error('loadPlaylists error', error); return false; }
 
   const container = document.getElementById("playlist-container");
+  console.log('loadPlaylists auth.getUser result:', gu);
+  console.log('loadPlaylists user id:', user?.id);
+  console.log('loadPlaylists fetched playlists count:', (data||[]).length);
+  if(!(data||[]).length){
+    container.innerHTML = '<div style="opacity:.6;padding:8px">Nenhuma playlist</div>';
+    return true;
+  }
   container.innerHTML = (data || []).map(p => {
-    const safeName = JSON.stringify(p.nome);
+    const encName = encodeURIComponent(p.nome);
     const active = (curPl == p.id) ? 'active' : '';
     return `
-      <div class="playlist ${active}" data-id="${p.id}" data-name=${safeName}>
+      <div class="playlist ${active}" data-id="${p.id}" data-name="${encName}">
         <b>${p.nome.toUpperCase()}</b>
         <div class="pl-tools">
-          <span data-action="zip" data-id="${p.id}" data-name=${safeName}>📦 ZIP</span>
-          <span data-action="rename" data-id="${p.id}" data-name=${safeName}>✎ RENOMEAR</span>
+          <span data-action="zip" data-id="${p.id}" data-name="${encName}">📦 ZIP</span>
+          <span data-action="rename" data-id="${p.id}" data-name="${encName}">✎ RENOMEAR</span>
           <span data-action="share" data-id="${p.id}">🔗 COMPARTILHAR</span>
           <span data-action="delete" data-id="${p.id}">🗑️ EXCLUIR</span>
         </div>
@@ -230,7 +237,8 @@ async function loadPlaylists(){
 }
 
 async function renamePlaylist(id, oldName){
-  const n = prompt('Novo nome:', oldName.replace(/^"|"$/g, ''));
+  const decoded = decodeURIComponent(String(oldName || ''));
+  const n = prompt('Novo nome:', decoded);
   if(!n) return;
   await sb.from('playlists').update({ nome: n }).eq('id', id);
   loadPlaylists();
@@ -298,13 +306,17 @@ if(vSlideEl) vSlideEl.oninput = e => Tone.Destination.volume.value = parseFloat(
  
  async function loadSongs(){
    const {data}=await sb.from("musicas").select("*").eq("playlist_id",curPl).order("titulo");
+  if(!(data||[]).length){
+    document.getElementById('songs-container').innerHTML = '<div style="opacity:.6;padding:8px">Nenhuma música</div>';
+    return;
+  }
   document.getElementById("songs-container").innerHTML=(data||[]).map(s => {
-    const safeTitle = JSON.stringify(s.titulo);
+    const encTitle = encodeURIComponent(s.titulo);
     return `
-    <div class="song" data-id="${s.id}" data-audio="${s.audio_url}" data-title=${safeTitle} data-pitch="${s.pitch}">
+    <div class="song" data-id="${s.id}" data-audio="${s.audio_url}" data-title="${encTitle}" data-pitch="${s.pitch}">
       <span>${s.titulo}</span>
       <div class="song-actions" style="display:flex; gap:15px;">
-        <svg data-action="download" data-audio="${s.audio_url}" data-title=${safeTitle} viewBox="0 0 24 24" width="18" fill="currentColor" style="opacity:0.6"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        <svg data-action="download" data-audio="${s.audio_url}" data-title="${encTitle}" viewBox="0 0 24 24" width="18" fill="currentColor" style="opacity:0.6"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
         <span data-action="delete" data-id="${s.id}" style="opacity:.4">✕</span>
       </div>
     </div>`;
@@ -376,15 +388,31 @@ const songsContainer = document.getElementById('songs-container');
 if(playlistContainer){
   playlistContainer.addEventListener('click', (ev)=>{
     const actionEl = ev.target.closest('[data-action]');
-    if(actionEl){ ev.stopPropagation(); const action = actionEl.dataset.action; const id = actionEl.dataset.id; const name = actionEl.dataset.name; if(action==='zip') downloadZip(id, name); else if(action==='rename') renamePlaylist(id, name); else if(action==='share') sharePlaylist(id); else if(action==='delete') deletePlaylist(id); return; }
-    const pl = ev.target.closest('.playlist'); if(pl){ selectPlaylist(pl.dataset.id, pl.dataset.name); }
+    if(actionEl){
+      ev.stopPropagation();
+      const action = actionEl.dataset.action;
+      const id = actionEl.dataset.id;
+      const name = actionEl.dataset.name ? decodeURIComponent(actionEl.dataset.name) : undefined;
+      if(action==='zip') return downloadZip(id, name);
+      if(action==='rename') return renamePlaylist(id, name);
+      if(action==='share') return sharePlaylist(id);
+      if(action==='delete') return deletePlaylist(id);
+      return;
+    }
+    const pl = ev.target.closest('.playlist'); if(pl){ selectPlaylist(pl.dataset.id, decodeURIComponent(pl.dataset.name)); }
   });
 }
 if(songsContainer){
   songsContainer.addEventListener('click', (ev)=>{
     const actionEl = ev.target.closest('[data-action]');
-    if(actionEl){ ev.stopPropagation(); const action = actionEl.dataset.action; if(action==='download') downloadDirect(actionEl.dataset.audio, actionEl.dataset.title); else if(action==='delete') deleteSong(actionEl.dataset.id); return; }
-    const song = ev.target.closest('.song'); if(song){ playSong(song.dataset.audio, song.dataset.title, parseInt(song.dataset.pitch||0)); }
+    if(actionEl){
+      ev.stopPropagation();
+      const action = actionEl.dataset.action;
+      if(action==='download') return downloadDirect(actionEl.dataset.audio, decodeURIComponent(actionEl.dataset.title || ''));
+      if(action==='delete') return deleteSong(actionEl.dataset.id);
+      return;
+    }
+    const song = ev.target.closest('.song'); if(song){ playSong(song.dataset.audio, decodeURIComponent(song.dataset.title||''), parseInt(song.dataset.pitch||0)); }
   });
 }
 
