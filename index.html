@@ -3,309 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO</title>
-    
+    <title>GIGMASTER RESET v17</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
-    
     <style>
-        :root { --green: #1db954; --bg: #050505; --card: #121212; --border: #282828; --text: #ffffff; --dim: #b3b3b3; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-        
-        /* Auth */
-        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .auth-card { background: var(--card); padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; border: 1px solid var(--border); text-align: center; }
-        input { width: 100%; padding: 12px; margin-bottom: 10px; background: #181818; border: 1px solid var(--border); color: white; border-radius: 8px; }
-        
-        /* Layout */
-        #app { display: none; height: 100vh; flex-direction: column; }
-        .main-header { padding: 10px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #000; }
-        .main-container { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 260px; background: #000; border-right: 1px solid var(--border); padding: 15px; overflow-y: auto; }
-        .content { flex: 1; overflow-y: auto; padding-bottom: 120px; position: relative; }
-        
-        /* Cifra Viewer */
-        #cifra-viewer { padding: 30px; font-family: 'JetBrains Mono', monospace; white-space: pre-wrap; font-size: 16px; display: none; }
-        
-        /* Song Items */
-        .song-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #1a1a1a; cursor: pointer; }
-        .song-item:hover { background: #1a1a1a; }
-        .active-song { color: var(--green); font-weight: bold; }
-
-        /* Footer Player */
-        footer { height: 110px; background: #121212; border-top: 1px solid var(--border); padding: 10px 20px; position: fixed; bottom: 0; width: 100%; }
-        .player-grid { display: grid; grid-template-columns: 1fr 2fr 1fr; align-items: center; max-width: 1200px; margin: 0 auto; gap: 20px; }
-        .play-btn { width: 50px; height: 50px; border-radius: 50%; background: #fff; border: none; cursor: pointer; }
-        
-        /* Modais */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 8888; align-items: center; justify-content: center; }
-        .modal-content { background: var(--card); padding: 20px; border-radius: 15px; width: 90%; max-width: 500px; }
-
-        .btn-green { background: var(--green); color: black; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
-        .btn-outline { background: transparent; color: white; border: 1px solid var(--dim); padding: 8px 15px; border-radius: 20px; cursor: pointer; }
+        :root { --green: #1db954; --bg: #000; --card: #121212; --text: #fff; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; }
+        .btn { padding: 12px 25px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; }
+        .btn-green { background: var(--green); color: #000; }
+        input { padding: 10px; border-radius: 5px; border: 1px solid #333; background: #111; color: #fff; width: 250px; }
+        #app { display: none; flex: 1; flex-direction: column; }
+        .sidebar { width: 250px; border-right: 1px solid #333; padding: 15px; }
+        .main-content { flex: 1; padding: 20px; overflow-y: auto; }
+        footer { background: #181818; padding: 20px; border-top: 1px solid #333; }
+        .player-ctrl { display: flex; align-items: center; gap: 20px; justify-content: center; }
     </style>
 </head>
 <body>
-
     <div id="auth-screen">
-        <div class="auth-card">
-            <h1 style="margin-bottom: 20px;">GIGMASTER</h1>
-            <input type="email" id="email" placeholder="E-mail">
-            <input type="password" id="password" placeholder="Senha">
-            <button class="btn-green" style="width:100%" onclick="handleAuth('in')">LOGAR</button>
-            <button class="btn-outline" style="width:100%; margin-top:10px; font-size:12px;" onclick="handleAuth('up')">CRIAR CONTA NOVA</button>
-            <p id="auth-msg" style="font-size:12px; color: var(--green); margin-top: 10px;"></p>
-        </div>
+        <h1>GIGMASTER</h1>
+        <input type="email" id="email" placeholder="E-mail">
+        <input type="password" id="pass" placeholder="Senha">
+        <button class="btn btn-green" onclick="login()">ENTRAR / CRIAR CONTA</button>
+        <p id="msg"></p>
     </div>
 
     <div id="app">
-        <header class="main-header">
-            <div style="font-weight:900;">GIGMASTER <span style="color:var(--green)">PRO</span></div>
-            <div style="display:flex; gap:10px;">
-                <label class="btn-green" style="font-size:12px;">+ MP3 <input type="file" id="file-input" hidden></label>
-                <button class="btn-outline" onclick="logout()">SAIR</button>
-            </div>
+        <header style="padding:15px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">
+            <b>GIGMASTER PRO</b>
+            <button onclick="logout()">SAIR</button>
         </header>
-
-        <div class="main-container">
-            <aside class="sidebar">
-                <button class="btn-outline" style="width:100%" onclick="createPlaylist()">+ NOVA PASTA</button>
+        <div style="display:flex; flex:1;">
+            <div class="sidebar">
+                <button onclick="addPl()">+ NOVA PASTA</button>
                 <div id="pl-list" style="margin-top:20px;"></div>
-            </aside>
-            <main class="content">
-                <div id="cifra-viewer" onclick="this.style.display='none'; document.getElementById('song-list').style.display='block'"></div>
-                <div id="song-list" style="padding:20px;">
-                    <h2 id="pl-title">Escolha uma pasta</h2>
-                    <div id="songs-container"></div>
-                </div>
-            </main>
+            </div>
+            <div class="main-content">
+                <h2 id="pl-title">Músicas</h2>
+                <label class="btn btn-green">+ MP3<input type="file" id="up-mp3" hidden></label>
+                <div id="song-list" style="margin-top:20px;"></div>
+            </div>
         </div>
-
         <footer>
-            <div class="player-grid">
-                <div>
-                    <div id="now-playing" style="font-size:13px; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Pronto</div>
-                    <div id="pl-name-info" style="font-size:10px; color:var(--dim);">Studio Mode</div>
-                </div>
-                <div style="text-align:center;">
-                    <div style="display:flex; align-items:center; justify-content:center; gap:20px; margin-bottom:5px;">
-                        <div><small>TOM</small><br><input type="range" id="p-slide" min="-7" max="7" value="0" style="width:70px"> <b id="p-val">0</b></div>
-                        <button id="play-btn" class="play-btn">▶</button>
-                        <div><small>VOL</small><br><input type="range" id="v-slide" min="-60" max="0" value="-5" style="width:70px"></div>
-                    </div>
-                    <input type="range" id="seek-slide" value="0" step="0.1" style="width:100%">
-                </div>
-                <div style="text-align:right;">
-                    <button class="btn-green" style="font-size:10px;" onclick="savePitch()">FIXAR TOM</button>
-                    <button class="btn-outline" style="font-size:10px; margin-top:5px" onclick="openShare()">COMPARTILHAR</button>
-                    <button class="btn-outline" style="font-size:10px; margin-top:5px" onclick="openPix()">DOAR</button>
-                </div>
+            <div class="player-ctrl">
+                <button id="play-btn" style="width:50px; height:50px; border-radius:50%;">▶</button>
+                <div>TOM: <input type="range" id="p-slide" min="-7" max="7" value="0"> <b id="p-val">0</b></div>
+                <input type="range" id="seek-slide" style="width:300px;">
             </div>
         </footer>
-    </div>
-
-    <div id="modal-cifra" class="modal">
-        <div class="modal-content">
-            <h3>Editar Cifra</h3>
-            <textarea id="edit-cifra-text" style="width:100%; height:300px; background:#000; color:var(--green); border:1px solid var(--border); font-family:monospace;"></textarea>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="btn-outline" onclick="document.getElementById('modal-cifra').style.display='none'">FECHAR</button>
-                <button class="btn-green" onclick="saveCifraDB()">SALVAR</button>
-            </div>
-        </div>
     </div>
 
     <script>
         const SB_URL = 'https://mdtqwugkaonipbfqqvhj.supabase.co';
         const SB_KEY = 'sb_publishable_ercRd8vFjpnVyXf0WiPVSw_tWCSmsGm';
-        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
-
+        const sb = supabase.createClient(SB_URL, SB_KEY);
         const player = new Tone.Player();
-        const pitchShift = new Tone.PitchShift({ pitch: 0 }).toDestination();
-        player.connect(pitchShift);
+        const shift = new Tone.PitchShift().toDestination();
+        player.connect(shift);
 
-        let currentPlId = null;
-        let currentSong = null;
+        let curPl = null;
 
-        // --- AUTH ---
-        async function handleAuth(type) {
+        async function login() {
             const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const msg = document.getElementById('auth-msg');
-            msg.innerText = "Aguarde...";
-
-            const { data, error } = type === 'in' 
-                ? await supabaseClient.auth.signInWithPassword({ email, password })
-                : await supabaseClient.auth.signUp({ email, password });
-
-            if(error) msg.innerText = error.message;
-            else { 
-                if(type === 'up') msg.innerText = "Conta criada! Tente logar.";
-                else checkUser(); 
-            }
+            const password = document.getElementById('pass').value;
+            const { error } = await sb.auth.signInWithPassword({ email, password });
+            if(error) {
+                await sb.auth.signUp({ email, password });
+                document.getElementById('msg').innerText = "Conta criada! Logue agora.";
+            } else { location.reload(); }
         }
 
-        async function checkUser() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
+        async function check() {
+            const { data: { session } } = await sb.auth.getSession();
             if(session) {
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('app').style.display = 'flex';
-                loadPlaylists();
+                loadPl();
             }
         }
 
-        function logout() { supabaseClient.auth.signOut(); location.reload(); }
-
-        // --- PLAYLISTS ---
-        async function loadPlaylists() {
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            const { data } = await supabaseClient.from('playlists').select('*').eq('user_id', user.id);
-            document.getElementById('pl-list').innerHTML = data.map(p => `
-                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                    <span onclick="selectPl(${p.id}, '${p.nome}')" style="cursor:pointer">📂 ${p.nome}</span>
-                    <span onclick="delPl(${p.id})" style="color:red; cursor:pointer">✕</span>
-                </div>
-            `).join('');
+        async function loadPl() {
+            const { data: { user } } = await sb.auth.getUser();
+            const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
+            document.getElementById('pl-list').innerHTML = data.map(p => `<div onclick="selPl(${p.id},'${p.nome}')" style="cursor:pointer; margin-bottom:10px;">📂 ${p.nome}</div>`).join('');
         }
 
-        async function createPlaylist() {
-            const n = prompt("Nome da Pasta:");
-            if(!n) return;
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            await supabaseClient.from('playlists').insert([{ nome: n, user_id: user.id }]);
-            loadPlaylists();
+        async function addPl() {
+            const n = prompt("Nome:");
+            const { data: { user } } = await sb.auth.getUser();
+            await sb.from('playlists').insert({ nome: n, user_id: user.id });
+            loadPl();
         }
 
-        async function delPl(id) { if(confirm("Apagar pasta e músicas?")) { await supabaseClient.from('musicas').delete().eq('playlist_id', id); await supabaseClient.from('playlists').delete().eq('id', id); loadPlaylists(); } }
+        function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; loadSongs(); }
 
-        function selectPl(id, nome) {
-            currentPlId = id;
-            document.getElementById('pl-title').innerText = nome;
-            loadSongs();
-        }
-
-        // --- SONGS ---
         async function loadSongs() {
-            const { data } = await supabaseClient.from('musicas').select('*').eq('playlist_id', currentPlId);
-            document.getElementById('songs-container').innerHTML = data.map(s => `
-                <div class="song-item ${currentSong?.id === s.id ? 'active-song' : ''}" onclick='playThis(${JSON.stringify(s)})'>
-                    <span>${s.titulo} (${s.pitch})</span>
-                    <div>
-                        <span onclick="event.stopPropagation(); editCifra(${s.id}, \`${s.cifra || ''}\`)">📄</span>
-                        <span onclick="event.stopPropagation(); delSong(${s.id})" style="margin-left:15px">✕</span>
-                    </div>
-                </div>
-            `).join('');
+            const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl);
+            document.getElementById('song-list').innerHTML = data.map(s => `<div onclick='play("${s.audio_url}", ${s.pitch})' style="padding:10px; border-bottom:1px solid #222;">🎵 ${s.titulo}</div>`).join('');
         }
 
-        async function playThis(song) {
-            currentSong = song;
-            document.getElementById('now-playing').innerText = song.titulo;
-            document.getElementById('p-val').innerText = song.pitch;
-            document.getElementById('p-slide').value = song.pitch;
-            pitchShift.pitch = song.pitch;
-
-            if(song.cifra) {
-                const cv = document.getElementById('cifra-viewer');
-                cv.innerText = song.cifra;
-                cv.style.display = 'block';
-                document.getElementById('song-list').style.display = 'none';
-            }
-
-            await player.load(song.audio_url);
-            document.getElementById('seek-slide').max = player.buffer.duration;
-            loadSongs();
-        }
-
-        async function delSong(id) { if(confirm("Apagar música?")) { await supabaseClient.from('musicas').delete().eq('id', id); loadSongs(); } }
-
-        // --- MP3 UPLOAD ---
-        document.getElementById('file-input').onchange = async (e) => {
-            if(!currentPlId) return alert("Selecione uma pasta primeiro!");
+        document.getElementById('up-mp3').onchange = async (e) => {
+            if(!curPl) return alert("Selecione uma pasta!");
             const file = e.target.files[0];
-            const name = prompt("Nome da música:", file.name);
-            
-            const filePath = `musicas/${Date.now()}_${file.name}`;
-            const { data: uploadData, error: uploadError } = await supabaseClient.storage.from('audios').upload(filePath, file);
-            
-            if(uploadError) return alert("Erro no Storage: " + uploadError.message);
-
-            const { data: { publicUrl } } = supabaseClient.storage.from('audios').getPublicUrl(filePath);
-
-            await supabaseClient.from('musicas').insert([{
-                titulo: name,
-                audio_url: publicUrl,
-                playlist_id: currentPlId,
-                pitch: 0
-            }]);
+            const path = `audios/${Date.now()}_${file.name}`;
+            await sb.storage.from('audios').upload(path, file);
+            const { data: { publicUrl } } = sb.storage.from('audios').getPublicUrl(path);
+            await sb.from('musicas').insert({ titulo: file.name, audio_url: publicUrl, playlist_id: curPl, pitch: 0 });
             loadSongs();
         };
 
-        // --- PLAYER CONTROLS ---
+        async function play(url, p) {
+            await player.load(url);
+            shift.pitch = p;
+            document.getElementById('p-val').innerText = p;
+            document.getElementById('p-slide').value = p;
+            document.getElementById('seek-slide').max = player.buffer.duration;
+        }
+
         document.getElementById('play-btn').onclick = async () => {
             await Tone.start();
-            if(Tone.Transport.state === "started") {
-                Tone.Transport.pause();
-                document.getElementById('play-btn').innerText = "▶";
-            } else {
-                Tone.Transport.start();
-                document.getElementById('play-btn').innerText = "⏸";
-            }
+            if(Tone.Transport.state === "started") { Tone.Transport.pause(); } 
+            else { Tone.Transport.start(); }
         };
 
-        document.getElementById('p-slide').oninput = (e) => {
-            pitchShift.pitch = parseInt(e.target.value);
-            document.getElementById('p-val').innerText = e.target.value;
-        };
-
-        document.getElementById('v-slide').oninput = (e) => {
-            Tone.Destination.volume.value = parseFloat(e.target.value);
-        };
-
-        document.getElementById('seek-slide').oninput = (e) => {
-            Tone.Transport.seconds = parseFloat(e.target.value);
-            player.seek(Tone.Transport.seconds);
-        };
-
-        setInterval(() => {
-            if(Tone.Transport.state === "started") {
-                document.getElementById('seek-slide').value = Tone.Transport.seconds;
-            }
-        }, 500);
-
-        // --- FUNÇÕES EXTRA ---
-        function editCifra(id, txt) {
-            currentSong = { ...currentSong, id: id };
-            document.getElementById('edit-cifra-text').value = txt;
-            document.getElementById('modal-cifra').style.display = 'flex';
-        }
-
-        async function saveCifraDB() {
-            const txt = document.getElementById('edit-cifra-text').value;
-            await supabaseClient.from('musicas').update({ cifra: txt }).eq('id', currentSong.id);
-            document.getElementById('modal-cifra').style.display = 'none';
-            loadSongs();
-        }
-
-        async function savePitch() {
-            if(!currentSong) return;
-            await supabaseClient.from('musicas').update({ pitch: pitchShift.pitch }).eq('id', currentSong.id);
-            alert("Tom fixado!");
-            loadSongs();
-        }
-
-        function openShare() {
-            const url = `${window.location.origin}${window.location.pathname}?share=${currentPlId}`;
-            navigator.clipboard.writeText(url);
-            alert("Link da pasta copiado para a banda!");
-        }
-
-        function openPix() { alert("PIX: copia e cola ou QR Code (Configura tua imagem pix.jpg no servidor)"); }
-
-        checkUser();
+        document.getElementById('p-slide').oninput = (e) => { shift.pitch = e.target.value; document.getElementById('p-val').innerText = e.target.value; };
+        
+        function logout() { sb.auth.signOut(); location.reload(); }
+        setInterval(() => { document.getElementById('seek-slide').value = Tone.Transport.seconds; }, 500);
+        check();
     </script>
 </body>
 </html>
