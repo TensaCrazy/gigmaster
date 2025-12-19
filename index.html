@@ -3,88 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v20.7</title>
+    <title>GIGMASTER PRO | v20.8</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
     <style>
         :root { --green: #1db954; --bg: #0b0b0b; --surface: #121212; --border: #282828; --text: #fff; --sub: #888; }
         body.light-theme { --bg: #f0f0f0; --surface: #ffffff; --border: #ddd; --text: #111; --sub: #666; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
+        /* HEADER */
         header { height: 60px; padding: 0 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); z-index: 500; }
         .u-badge { background: var(--border); padding: 6px 15px; border-radius: 20px; font-size: 11px; cursor: pointer; position: relative; }
         .drop-menu { position: absolute; top: 50px; right: 0; background: var(--surface); border: 1px solid var(--border); display: none; width: 180px; border-radius: 8px; box-shadow: 0 10px 30px #000; z-index: 600; }
         .drop-menu div { padding: 12px 15px; border-bottom: 1px solid var(--border); font-size: 12px; }
         .drop-menu div:hover { background: var(--green); color: #000; }
 
+        /* MODAL SYSTEM (IDENTIDADE VISUAL) */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); }
+        .modal-box { background: var(--surface); padding: 25px; border-radius: 12px; border: 1px solid var(--border); width: 100%; max-width: 320px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .modal-box h3 { margin: 0 0 10px 0; font-weight: 400; letter-spacing: 1px; }
+        .modal-box p { font-size: 12px; color: var(--sub); margin-bottom: 20px; }
+        .modal-box input { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); margin-bottom: 20px; }
+        .modal-btns { display: flex; gap: 10px; }
+
+        /* UI ELEMENTS */
         .main-container { display: flex; flex: 1; overflow: hidden; }
         .sidebar { width: 280px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
         .main-content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 180px; }
-        
-        .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: rgba(255,255,255,0.03); cursor: pointer; font-size: 12px; transition: 0.2s; }
-        .pl-item:hover { background: rgba(255,255,255,0.06); }
-        .pl-actions { display: flex; gap: 12px; align-items: center; }
-        .pl-actions svg { opacity: 0.4; transition: 0.2s; }
-        .pl-actions svg:hover { opacity: 1; fill: var(--green); }
-
+        .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: rgba(255,255,255,0.03); cursor: pointer; font-size: 12px; }
         .song-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
         .song-row.active { border-left: 4px solid var(--green); background: rgba(29,185,84,0.08); color: var(--green); }
 
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); }
-        .modal-box { background: var(--surface); padding: 25px; border-radius: 12px; border: 1px solid var(--border); width: 100%; max-width: 320px; text-align: center; }
-        .modal-box input { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); margin: 15px 0; }
-
         footer { background: var(--surface); border-top: 1px solid var(--border); padding: 15px 25px; position: fixed; bottom: 0; width: 100%; height: 150px; z-index: 500; }
-        .p-wrap { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
-        .p-main { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; }
-        .play-btn { width: 55px; height: 55px; border-radius: 50%; background: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .btn-slim { padding: 10px 15px; border-radius: 6px; border: 1px solid var(--green); color: var(--green); background: transparent; font-size: 10px; font-weight: 600; cursor: pointer; text-transform: uppercase; }
-
-        @media (max-width: 768px) { .sidebar { display: none; } .p-main { grid-template-columns: 1fr 1fr; } .vol-cont { display: none; } }
+        .btn-slim { padding: 10px 15px; border-radius: 6px; border: 1px solid var(--green); color: var(--green); background: transparent; font-size: 10px; font-weight: 600; cursor: pointer; text-transform: uppercase; flex: 1; }
+        .btn-fill { background: var(--green); color: #000; border: none; }
     </style>
 </head>
 <body class="dark-theme">
 
-    <div id="modal-folder" class="modal-overlay">
+    <div id="master-modal" class="modal-overlay">
         <div class="modal-box">
-            <h3 id="folder-modal-title" style="margin:0; font-weight:400">PASTA</h3>
-            <input type="text" id="folder-input" placeholder="Nome da pasta">
-            <div style="display:flex; gap:10px;">
-                <button class="btn-slim" onclick="closeM('modal-folder')" style="flex:1; border-color:var(--sub); color:var(--sub)">CANCELAR</button>
-                <button class="btn-slim" id="folder-confirm-btn" style="flex:1; background:var(--green); color:#000; border:none;">SALVAR</button>
+            <h3 id="mm-title">Título</h3>
+            <p id="mm-text">Descrição aqui</p>
+            <input type="text" id="mm-input" style="display: none;">
+            <div class="modal-btns">
+                <button class="btn-slim" id="mm-cancel" style="border-color:var(--sub); color:var(--sub)">Cancelar</button>
+                <button class="btn-slim btn-fill" id="mm-confirm">Confirmar</button>
             </div>
         </div>
     </div>
 
-    <div id="modal-nick" class="modal-overlay">
-        <div class="modal-box">
-            <h3 style="margin:0; font-weight:400">NICKNAME</h3>
-            <input type="text" id="in-nick" placeholder="Seu novo nome">
-            <div style="display:flex; gap:10px;">
-                <button class="btn-slim" onclick="closeM('modal-nick')" style="flex:1; border-color:var(--sub); color:var(--sub)">CANCELAR</button>
-                <button class="btn-slim" onclick="updateNick()" style="flex:1; background:var(--green); color:#000; border:none;">SALVAR</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-pix" class="modal-overlay" onclick="closeM('modal-pix')">
+    <div id="modal-pix" class="modal-overlay" onclick="this.style.display='none'">
         <div class="modal-box" onclick="event.stopPropagation()">
-            <h3 style="margin:0; font-weight:400">APOIAR GIGMASTER</h3>
+            <h3 style="margin:0">APOIAR GIGMASTER</h3>
             <img src="pix.jpg" style="width:100%; border-radius:8px; margin:20px 0;">
-            <button class="btn-slim" onclick="closeM('modal-pix')" style="width:100%">FECHAR</button>
+            <button class="btn-slim" onclick="document.getElementById('modal-pix').style.display='none'">FECHAR</button>
         </div>
     </div>
 
     <div id="auth-screen" style="position:fixed; inset:0; background:var(--bg); z-index:2000; display:flex; align-items:center; justify-content:center; padding:20px;">
         <div class="auth-card" style="background: var(--surface); padding: 40px; border-radius: 15px; border: 1px solid var(--border); text-align: center; width: 100%; max-width: 320px;">
-            <h2 style="letter-spacing:4px; margin-bottom:30px; font-weight:300">GIGMASTER</h2>
+            <h2 style="letter-spacing:4px; margin-bottom:30px; font-weight:200">GIGMASTER</h2>
             <input type="email" id="a-email" placeholder="E-mail" style="width:100%; padding:12px; margin-bottom:10px; border-radius:6px; border:1px solid var(--border); background:#1a1a1a; color:#fff;">
             <input type="password" id="a-pass" placeholder="Senha" style="width:100%; padding:12px; margin-bottom:20px; border-radius:6px; border:1px solid var(--border); background:#1a1a1a; color:#fff;">
-            <button class="btn-slim" onclick="handleAuth('in')" style="width:100%; background:var(--green); color:#000; border:none; margin-bottom:12px; height:50px;">LOGAR</button>
+            <button class="btn-slim btn-fill" onclick="handleAuth('in')" style="width:100%; margin-bottom:12px; height:50px;">LOGAR</button>
             <button class="btn-slim" onclick="handleAuth('up')" style="width:100%; border-color:#444; color:var(--sub)">CRIAR CONTA</button>
         </div>
     </div>
@@ -96,8 +82,8 @@
                 <span id="u-display">PERFIL</span> ▼
                 <div class="drop-menu" id="u-drop">
                     <div onclick="toggleT()">🌓 ALTERAR TEMA</div>
-                    <div onclick="openM('modal-nick')">👤 MUDAR NICK</div>
-                    <div onclick="openM('modal-pix')">💎 DOAÇÃO PIX</div>
+                    <div onclick="uiRenameNick()">👤 MUDAR NICK</div>
+                    <div onclick="document.getElementById('modal-pix').style.display='flex'">💎 DOAÇÃO PIX</div>
                     <div onclick="logout()" style="color:#ff4d4d">🚪 SAIR</div>
                 </div>
             </div>
@@ -105,12 +91,12 @@
 
         <div class="main-container">
             <div class="sidebar">
-                <button class="btn-slim" style="width:100%" onclick="addFoldUI()">+ NOVA PASTA</button>
+                <button class="btn-slim" style="width:100%" onclick="uiAddFolder()">+ NOVA PASTA</button>
                 <div id="pl-list" style="margin-top:20px;"></div>
             </div>
             <div class="main-content">
                 <div style="display:flex; flex-direction:column; gap:15px; margin-bottom:25px;">
-                    <h2 id="pl-title" style="margin:0; font-weight:300; font-size:1.8rem;">Biblioteca</h2>
+                    <h2 id="pl-title" style="margin:0; font-weight:200; font-size:1.8rem;">Biblioteca</h2>
                     <div style="display:flex; gap:10px;">
                         <label class="btn-slim" id="btn-up" style="display:none; flex:1; text-align:center;">+ MP3 <input type="file" id="up-file" hidden></label>
                         <button id="btn-zip" class="btn-slim" style="display:none; flex:1; border-color:#444; color:#888" onclick="dlZip()">ZIP</button>
@@ -121,16 +107,16 @@
         </div>
 
         <footer>
-            <div class="p-wrap">
+            <div style="max-width:1000px; margin:0 auto; display:flex; flex-direction:column; gap:12px;">
                 <div id="cur-track" style="text-align:center; font-size:11px; color:var(--green); font-weight:600;">Standby</div>
                 <input type="range" id="seek" value="0" step="0.1">
-                <div class="p-main">
+                <div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:20px;">
                     <div style="display:flex; align-items:center; gap:8px;">
                         <input type="range" id="p-slide" min="-7" max="7" value="0" style="width:50px">
                         <b id="p-val" style="font-size:12px; width:15px;">0</b>
                         <svg onclick="saveP()" viewBox="0 0 24 24" width="16" fill="var(--green)" style="cursor:pointer;"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 i1.34 3 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
                     </div>
-                    <button id="play-btn" class="play-btn">
+                    <button id="play-btn" style="width:50px; height:50px; border-radius:50%; background:#fff; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                         <svg id="svg-play" viewBox="0 0 24 24" width="22"><path fill="#000" d="M8 5v14l11-7z"/></svg>
                     </button>
                     <div class="vol-cont" style="display:flex; justify-content:flex-end; align-items:center; gap:10px;">
@@ -154,14 +140,33 @@
 
         let curPl = null, curSId = null, allS = [];
 
-        // --- AUTH & REDIRECTION ---
+        // --- SISTEMA DE MODAL CUSTOM ---
+        function showModal({title, text, input, onConfirm}) {
+            const overlay = document.getElementById('master-modal');
+            const inField = document.getElementById('mm-input');
+            document.getElementById('mm-title').innerText = title;
+            document.getElementById('mm-text').innerText = text;
+            inField.style.display = input ? 'block' : 'none';
+            inField.value = "";
+            overlay.style.display = 'flex';
+
+            document.getElementById('mm-confirm').onclick = () => {
+                onConfirm(input ? inField.value : true);
+                overlay.style.display = 'none';
+            };
+            document.getElementById('mm-cancel').onclick = () => overlay.style.display = 'none';
+        }
+
+        // --- AUTH & UI ---
+        function toggleD() { const d = document.getElementById('u-drop'); d.style.display = (d.style.display==='block')?'none':'block'; }
+        window.onclick = (e) => { if(!e.target.closest('.u-badge')) document.getElementById('u-drop').style.display='none'; };
+        function toggleT() { document.body.classList.toggle('light-theme'); }
         async function handleAuth(type) {
             const email = document.getElementById('a-email').value;
             const pass = document.getElementById('a-pass').value;
             const { error } = type === 'in' ? await sb.auth.signInWithPassword({ email, password:pass }) : await sb.auth.signUp({ email, password:pass });
             if(error) alert(error.message); else checkSession();
         }
-
         async function checkSession() {
             const { data: { session } } = await sb.auth.getSession();
             if(session) {
@@ -170,93 +175,67 @@
                 const { data: profile } = await sb.from('profiles').select('username').eq('id', session.user.id).single();
                 document.getElementById('u-display').innerText = (profile?.username || session.user.email.split('@')[0]).toUpperCase();
                 loadPl();
-            } else {
-                showLogin();
             }
         }
+        function logout() { sb.auth.signOut(); location.reload(); }
 
-        function showLogin() {
-            document.getElementById('app').style.display = 'none';
-            document.getElementById('auth-screen').style.display = 'flex';
-            // Reseta UI
-            document.getElementById('pl-list').innerHTML = '';
-            document.getElementById('song-list').innerHTML = '';
-            document.getElementById('pl-title').innerText = 'Biblioteca';
+        // --- GESTÃO COM MODAIS CUSTOM ---
+        function uiRenameNick() {
+            showModal({ title: "NICKNAME", text: "Digite seu novo nome de usuário:", input: true, onConfirm: async (n) => {
+                if(!n) return;
+                const { data: { user } } = await sb.auth.getUser();
+                await sb.from('profiles').upsert({ id: user.id, username: n });
+                document.getElementById('u-display').innerText = n.toUpperCase();
+            }});
         }
 
-        async function logout() {
-            // Para áudio
-            player.stop();
-            Tone.Transport.stop();
-            
-            // Logout Supabase
-            await sb.auth.signOut();
-            
-            // Reseta variáveis
-            curPl = null;
-            curSId = null;
-            
-            // Volta para login imediatamente
-            showLogin();
-            
-            // Recarrega para limpar cache da memória (opcional, mas seguro)
-            location.reload();
+        function uiAddFolder() {
+            showModal({ title: "NOVA PASTA", text: "Nome da playlist:", input: true, onConfirm: async (n) => {
+                if(!n) return;
+                const { data: { user } } = await sb.auth.getUser();
+                await sb.from('playlists').insert({ nome: n, user_id: user.id });
+                loadPl();
+            }});
         }
 
-        // --- RESTO DA LÓGICA (MANTIDA v20.6) ---
-        function toggleD() { const d = document.getElementById('u-drop'); d.style.display = (d.style.display==='block')?'none':'block'; }
-        window.onclick = (e) => { if(!e.target.closest('.u-badge')) document.getElementById('u-drop').style.display='none'; };
-        function toggleT() { document.body.classList.toggle('light-theme'); }
-        function openM(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeM(id) { document.getElementById(id).style.display = 'none'; }
-
-        async function updateNick() {
-            const n = document.getElementById('in-nick').value; if(!n) return;
-            const { data: { user } } = await sb.auth.getUser();
-            await sb.from('profiles').upsert({ id: user.id, username: n });
-            document.getElementById('u-display').innerText = n.toUpperCase(); closeM('modal-nick');
+        function uiRenameFolder(id, old) {
+            showModal({ title: "RENOMEAR", text: `Novo nome para "${old}":`, input: true, onConfirm: async (n) => {
+                if(!n || n === old) return;
+                await sb.from('playlists').update({ nome: n }).eq('id', id);
+                if(curPl === id) document.getElementById('pl-title').innerText = n;
+                loadPl();
+            }});
         }
 
+        function uiDelFolder(id, n) {
+            showModal({ title: "EXCLUIR", text: `Apagar a pasta "${n}" e todas as músicas nela?`, input: false, onConfirm: async () => {
+                await sb.from('musicas').delete().eq('playlist_id', id);
+                await sb.from('playlists').delete().eq('id', id);
+                loadPl();
+            }});
+        }
+
+        function uiDelSong(id, n) {
+            showModal({ title: "REMOVER", text: `Remover "${n}" da biblioteca?`, input: false, onConfirm: async () => {
+                await sb.from('musicas').delete().eq('id', id);
+                loadSongs();
+            }});
+        }
+
+        // --- CARREGAMENTO & PLAYER ---
         async function loadPl() {
             const { data: { user } } = await sb.auth.getUser(); if(!user) return;
             const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
             document.getElementById('pl-list').innerHTML = data.map(p => `
                 <div class="pl-item" onclick="selPl(${p.id},'${p.nome}')">
                     <span>📂 ${p.nome.toUpperCase()}</span>
-                    <div class="pl-actions">
-                        <svg onclick="event.stopPropagation(); renameFoldUI(${p.id}, '${p.nome}')" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                        <svg onclick="event.stopPropagation(); delPl(${p.id},'${p.nome}')" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    <div style="display:flex; gap:10px;">
+                        <svg onclick="event.stopPropagation(); uiRenameFolder(${p.id}, '${p.nome}')" viewBox="0 0 24 24" width="14" fill="#666"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        <svg onclick="event.stopPropagation(); uiDelFolder(${p.id},'${p.nome}')" viewBox="0 0 24 24" width="14" fill="#666"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                     </div>
                 </div>`).join('');
         }
 
-        function addFoldUI() {
-            document.getElementById('folder-modal-title').innerText = "NOVA PASTA";
-            document.getElementById('folder-input').value = "";
-            openM('modal-folder');
-            document.getElementById('folder-confirm-btn').onclick = async () => {
-                const name = document.getElementById('folder-input').value;
-                if(!name) return;
-                const { data: { user } } = await sb.auth.getUser();
-                await sb.from('playlists').insert({ nome: name, user_id: user.id });
-                closeM('modal-folder'); loadPl();
-            };
-        }
-
-        function renameFoldUI(id, oldName) {
-            document.getElementById('folder-modal-title').innerText = "RENOMEAR PASTA";
-            document.getElementById('folder-input').value = oldName;
-            openM('modal-folder');
-            document.getElementById('folder-confirm-btn').onclick = async () => {
-                const newName = document.getElementById('folder-input').value;
-                if(!newName || newName === oldName) return closeM('modal-folder');
-                await sb.from('playlists').update({ nome: newName }).eq('id', id);
-                if(curPl === id) document.getElementById('pl-title').innerText = newName;
-                closeM('modal-folder'); loadPl();
-            };
-        }
-
-        async function delPl(id, n) { if(confirm(`Apagar pasta "${n}"?`)) { await sb.from('musicas').delete().eq('playlist_id', id); await sb.from('playlists').delete().eq('id', id); loadPl(); } }
         function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; document.getElementById('btn-up').style.display = 'block'; document.getElementById('btn-zip').style.display = 'block'; loadSongs(); }
 
         async function loadSongs() {
@@ -266,13 +245,13 @@
                     <div style="flex:1"><b>${s.titulo}</b> <small style="margin-left:8px; opacity:0.5">${s.pitch} ST</small></div>
                     <div style="display:flex; gap:15px; align-items:center">
                         <svg onclick="event.stopPropagation(); dlMod('${s.audio_url}', ${s.pitch}, '${s.titulo}')" viewBox="0 0 24 24" width="16" fill="currentColor" style="opacity:0.4"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                        <span onclick="event.stopPropagation(); delS(${s.id})" style="opacity:0.3">✕</span>
+                        <span onclick="event.stopPropagation(); uiDelSong(${s.id}, '${s.titulo}')" style="opacity:0.3">✕</span>
                     </div>
                 </div>`).join('');
         }
 
         async function playS(url, p, tit, id) {
-            await Tone.start(); curSId = id; document.getElementById('cur-track').innerText = "CARREGANDO...";
+            await Tone.start(); curSId = id; document.getElementById('cur-track').innerText = "SINCRONIZANDO...";
             player.stop(); player.unsync(); Tone.Transport.stop(); Tone.Transport.cancel();
             await player.load(url); shift.pitch = p;
             document.getElementById('p-val').innerText = p; document.getElementById('p-slide').value = p;
@@ -282,15 +261,14 @@
         }
 
         async function saveP() { if(curSId) { await sb.from('musicas').update({pitch: parseInt(document.getElementById('p-slide').value)}).eq('id', curSId); loadSongs(); } }
-        async function delS(id) { if(confirm("Apagar música?")) { await sb.from('musicas').delete().eq('id', id); loadSongs(); } }
 
+        // --- DOWNLOADS & ZIP ---
         async function dlZip() {
             const zip = new JSZip(); for (let s of allS) { try { const r = await fetch(s.audio_url); const b = await r.blob(); zip.file(`${s.titulo}.mp3`, b); } catch(e){} }
             const c = await zip.generateAsync({type:"blob"}); saveAs(c, `playlist.zip`);
         }
 
         async function dlMod(url, p, tit) {
-            alert("Renderizando áudio com Pitch... Aguarde.");
             const buf = await (await fetch(url)).arrayBuffer();
             const aBuf = await Tone.getContext().rawContext.decodeAudioData(buf);
             const rend = await Tone.Offline(() => {
@@ -298,8 +276,7 @@
                 const sft = new Tone.PitchShift(p).toDestination();
                 ply.connect(sft); ply.start(0);
             }, aBuf.duration);
-            const wav = audioBufferToWav(rend);
-            saveAs(new Blob([wav], { type: 'audio/wav' }), `${tit}_${p}ST.wav`);
+            saveAs(new Blob([audioBufferToWav(rend)], { type: 'audio/wav' }), `${tit}_${p}ST.wav`);
         }
 
         function audioBufferToWav(b) {
@@ -311,6 +288,7 @@
             return bA;
         }
 
+        // --- CONTROLES ---
         document.getElementById('play-btn').onclick = () => {
             if(Tone.Transport.state === "started") { Tone.Transport.pause(); document.getElementById('svg-play').innerHTML = '<path fill="#000" d="M8 5v14l11-7z"/>'; }
             else { Tone.Transport.start(); document.getElementById('svg-play').innerHTML = '<path fill="#000" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; }
