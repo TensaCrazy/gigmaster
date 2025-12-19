@@ -3,250 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v19.5</title>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    
-    <style>
-        :root { --green: #1db954; --bg: #000; --surface: #121212; --border: #282828; --text: #fff; }
-        body.light-theme { --bg: #f5f5f5; --surface: #fff; --border: #ddd; --text: #111; }
-
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: 0.2s; }
-
-        /* Login */
-        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 15px; padding: 20px; }
-        .auth-card { background: var(--surface); padding: 30px; border-radius: 12px; width: 100%; max-width: 320px; border: 1px solid var(--border); text-align: center; }
-        .auth-card input { width: 100%; padding: 12px; margin-bottom: 10px; background: #1a1a1a; border: 1px solid var(--border); border-radius: 6px; color: #fff; box-sizing: border-box; }
-
-        /* Header & Nav */
-        header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); z-index: 100; }
-        .user-drop { position: relative; cursor: pointer; font-size: 12px; font-weight: 600; }
-        .dropdown { position: absolute; top: 100%; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; display: none; width: 180px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); margin-top: 10px; }
-        .dropdown div { padding: 12px; border-bottom: 1px solid var(--border); }
-        .dropdown div:hover { background: var(--green); color: #000; }
-
-        /* Layout Principal */
-        .main-container { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 260px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
-        .main-content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 180px; }
-
-        /* Responsividade Mobile */
-        @media (max-width: 768px) {
-            .sidebar { display: none; } /* Opcional: criar menu hamburguer depois */
-            .main-content { padding: 15px; }
-            .player-grid { grid-template-columns: 1fr !important; gap: 15px !important; }
-            .vol-area { display: none; } /* Esconder volume no mobile para caber tudo */
-        }
-
-        /* Song List */
-        .song-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 10px; border-bottom: 1px solid var(--border); }
-        .song-row.active { border-left: 3px solid var(--green); background: rgba(29, 185, 84, 0.05); }
-
-        /* Player Footer */
-        footer { background: var(--surface); border-top: 1px solid var(--border); padding: 20px; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
-        .player-grid { display: grid; grid-template-columns: 150px 1fr 150px; align-items: center; gap: 30px; max-width: 1200px; margin: 0 auto; }
-        
-        .play-btn { width: 50px; height: 50px; border-radius: 50%; background: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .play-btn svg { fill: #000; width: 20px; }
-        
-        input[type="range"] { accent-color: var(--green); width: 100%; }
-
-        /* Modal Pix */
-        #pix-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; align-items:center; justify-content:center; }
-        .modal-content { background:var(--surface); padding:20px; border-radius:12px; text-align:center; width:280px; }
-
-        .btn-slim { padding: 10px 18px; border-radius: 4px; border: 1px solid var(--green); color: var(--green); background: transparent; cursor: pointer; font-size: 11px; font-weight: 600; }
-        .btn-green { background: var(--green); color: #000; border: none; }
-    </style>
-</head>
-<body class="dark-theme">
-
-    <div id="auth-screen">
-        <div class="auth-card">
-            <h2 style="margin-top:0">GIGMASTER</h2>
-            <input type="email" id="email" placeholder="Seu e-mail">
-            <input type="password" id="pass" placeholder="Sua senha">
-            <button class="btn-slim btn-green" style="width:100%; margin-bottom:10px;" onclick="login('in')">LOGAR</button>
-            <button class="btn-slim" style="width:100%; border-color:#555; color:#888" onclick="login('up')">CRIAR CONTA</button>
-            <p id="msg" style="font-size:11px; color:var(--green); margin-top:15px;"></p>
-        </div>
-    </div>
-
-    <div id="pix-modal" onclick="this.style.display='none'">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <b>APOIE O PROJETO</b><br><br>
-            <img src="pix.jpg" style="width:100%; border-radius:8px;">
-            <br><br>
-            <button class="btn-slim" onclick="document.getElementById('pix-modal').style.display='none'">FECHAR</button>
-        </div>
-    </div>
-
-    <div id="app" style="display:none;">
-        <header>
-            <b style="font-size:14px; letter-spacing:1px;">GIGMASTER <span style="color:var(--green)">PRO</span></b>
-            <div class="user-drop" onclick="toggleDrop()">
-                <span id="user-display">PERFIL ▼</span>
-                <div class="dropdown" id="dropdown">
-                    <div onclick="toggleTheme()">🌓 ALTERAR TEMA</div>
-                    <div onclick="document.getElementById('pix-modal').style.display='flex'">💎 DOAÇÃO PIX</div>
-                    <div onclick="logout()" style="color:#ff4d4d">🚪 SAIR</div>
-                </div>
-            </div>
-        </header>
-
-        <div class="main-container">
-            <div class="sidebar">
-                <button class="btn-slim" style="width:100%" onclick="addPl()">+ NOVA PASTA</button>
-                <div id="pl-list" style="margin-top:20px;"></div>
-            </div>
-            <div class="main-content">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h2 id="pl-title" style="margin:0; font-size:1.5rem">Biblioteca</h2>
-                    <label class="btn-slim" id="btn-up" style="display:none;">UPLOAD MP3 <input type="file" id="up-mp3" hidden></label>
-                </div>
-                <button id="btn-zip" class="btn-slim" style="display:none; margin-bottom:20px; width:100%" onclick="downloadZip()">BAIXAR PASTA (.ZIP)</button>
-                <div id="song-list"></div>
-            </div>
-        </div>
-
-        <footer>
-            <div class="player-grid">
-                <div>
-                    <small style="color:#666; font-size:9px;">PITCH</small>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <input type="range" id="p-slide" min="-7" max="7" value="0" style="width:60px">
-                        <b id="p-val" style="color:var(--green); width:15px">0</b>
-                        <svg onclick="savePitch()" viewBox="0 0 24 24" width="16" style="fill:var(--green); cursor:pointer;"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
-                    </div>
-                </div>
-
-                <div style="display:flex; align-items:center; gap:15px;">
-                    <button id="play-btn" class="play-btn">
-                        <svg id="svg-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    </button>
-                    <div style="flex:1;">
-                        <div id="now-playing" style="font-size:10px; color:#888; margin-bottom:5px; text-align:center;">Selecione uma faixa</div>
-                        <input type="range" id="seek-slide" value="0" step="0.1">
-                    </div>
-                </div>
-
-                <div class="vol-area" style="display:flex; align-items:center; justify-content:flex-end; gap:10px;">
-                    <svg viewBox="0 0 24 24" width="14" fill="#666"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-                    <input type="range" id="v-slide" min="-40" max="6" value="0" style="width:70px">
-                </div>
-            </div>
-        </footer>
-    </div>
-
-    <script>
-        const SB_URL = 'https://mdtqwugkaonipbfqqvhj.supabase.co';
-        const SB_KEY = 'sb_publishable_ercRd8vFjpnVyXf0WiPVSw_tWCSmsGm';
-        const sb = supabase.createClient(SB_URL, SB_KEY);
-        
-        const player = new Tone.Player();
-        const shift = new Tone.PitchShift().toDestination();
-        player.connect(shift);
-
-        let curPl = null, curSongId = null, allSongs = [];
-
-        // Auth
-        async function login(type) {
-            const email = document.getElementById('email').value, password = document.getElementById('pass').value;
-            const { data, error } = type === 'in' ? await sb.auth.signInWithPassword({ email, password }) : await sb.auth.signUp({ email, password });
-            if(error) alert(error.message);
-            else if(type === 'up') document.getElementById('msg').innerText = "Conta criada com sucesso!";
-            else check();
-        }
-        async function check() {
-            const { data: { session } } = await sb.auth.getSession();
-            if(session) { document.getElementById('auth-screen').style.display = 'none'; document.getElementById('app').style.display = 'flex'; document.getElementById('user-display').innerText = session.user.email.split('@')[0].toUpperCase() + ' ▼'; loadPl(); }
-        }
-        function logout() { sb.auth.signOut(); location.reload(); }
-
-        // Interface
-        function toggleDrop() { const d = document.getElementById('dropdown'); d.style.display = d.style.display === 'block' ? 'none' : 'block'; }
-        function toggleTheme() { document.body.classList.toggle('light-theme'); }
-
-        async function loadPl() {
-            const { data: { user } } = await sb.auth.getUser();
-            const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
-            document.getElementById('pl-list').innerHTML = data.map(p => `<div onclick="selPl(${p.id},'${p.nome}')" style="cursor:pointer; padding:10px; font-size:13px; border-radius:6px; margin-bottom:5px; background:rgba(255,255,255,0.03)" class="${curPl==p.id?'active-song':''}">📂 ${p.nome.toUpperCase()}</div>`).join('');
-        }
-        async function addPl() {
-            const n = prompt("Nome da Pasta:"); if(!n) return;
-            const { data: { user } } = await sb.auth.getUser();
-            await sb.from('playlists').insert({ nome: n, user_id: user.id }); loadPl();
-        }
-        function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; document.getElementById('btn-up').style.display = 'block'; document.getElementById('btn-zip').style.display = 'block'; loadSongs(); loadPl(); }
-
-        async function loadSongs() {
-            const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl).order('titulo');
-            allSongs = data;
-            document.getElementById('song-list').innerHTML = data.map(s => `
-                <div class="song-row ${curSongId === s.id ? 'active' : ''}">
-                    <div onclick="playSong('${s.audio_url}', ${s.pitch}, '${s.titulo}', ${s.id})" style="flex:1; cursor:pointer">
-                        <b>${s.titulo}</b> <small style="margin-left:10px; opacity:0.5">${s.pitch} ST</small>
-                    </div>
-                    <div style="display:flex; gap:15px; align-items:center">
-                        <svg onclick="downloadModified('${s.audio_url}', ${s.pitch}, '${s.titulo}')" viewBox="0 0 24 24" width="16" style="fill:#666; cursor:pointer"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                        <span onclick="delSong(${s.id})" style="cursor:pointer; opacity:0.4">✕</span>
-                    </div>
-                </div>`).join('');
-        }
-
-        async function playSong(url, pitch, titulo, id) {
-            curSongId = id; document.getElementById('now-playing').innerText = "Carregando...";
-            player.stop(); player.unsync(); Tone.Transport.stop();
-            await player.load(url);
-            shift.pitch = pitch;
-            document.getElementById('p-val').innerText = pitch;
-            document.getElementById('p-slide').value = pitch;
-            document.getElementById('seek-slide').max = player.buffer.duration;
-            document.getElementById('now-playing').innerText = titulo;
-            player.sync().start(0); Tone.Transport.start();
-            document.getElementById('svg-play').innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-            loadSongs();
-        }
-
-        async function savePitch() {
-            if(!curSongId) return;
-            const p = document.getElementById('p-slide').value;
-            await sb.from('musicas').update({ pitch: parseInt(p) }).eq('id', curSongId);
-            loadSongs();
-        }
-
-        document.getElementById('play-btn').onclick = () => {
-            if(Tone.Transport.state === "started") { Tone.Transport.pause(); document.getElementById('svg-play').innerHTML = '<path d="M8 5v14l11-7z"/>'; }
-            else { Tone.Transport.start(); document.getElementById('svg-play').innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; }
-        };
-
-        // Download Zip
-        async function downloadZip() {
-            const zip = new JSZip();
-            for (let s of allSongs) { const r = await fetch(s.audio_url); const b = await r.blob(); zip.file(`${s.titulo}.mp3`, b); }
-            const c = await zip.generateAsync({type:"blob"}); saveAs(c, `playlist.zip`);
-        }
-
-        // Listeners
-        document.getElementById('p-slide').oninput = (e) => { shift.pitch = e.target.value; document.getElementById('p-val').innerText = e.target.value; };
-        document.getElementById('v-slide').oninput = (e) => { Tone.Destination.volume.value = e.target.value; };
-        document.getElementById('seek-slide').oninput = (e) => { Tone.Transport.seconds = e.target.value; player.seek(e.target.value); };
-        setInterval(() => { if(Tone.Transport.state === "started") document.getElementById('seek-slide').value = Tone.Transport.seconds; }, 500);
-
-        document.getElementById('up-mp3').onchange = async (e) => {
-            const file = e.target.files[0];
-            const path = `audios/${Date.now()}_${file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase()}`;
-            await sb.storage.from('audios').upload(path, file);
-            const { data: { publicUrl } } = sb.storage.from('audios').getPublicUrl(pa<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v19.6</title>
+    <title>GIGMASTER PRO | v19.7</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -258,128 +15,139 @@
         :root { --green: #1db954; --bg: #080808; --surface: #111; --border: rgba(255,255,255,0.1); --text: #d1d1d1; }
         body.light-theme { --bg: #f5f5f5; --surface: #fff; --border: rgba(0,0,0,0.1); --text: #222; }
 
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: 0.2s; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        /* Login */
-        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 15px; }
-        .auth-card { background: var(--surface); padding: 30px; border-radius: 8px; border: 1px solid var(--border); text-align: center; width: 90%; max-width: 320px; }
-        
-        /* Layout */
-        header { padding: 15px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); z-index: 100; }
+        /* Login Screen */
+        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .auth-card { background: var(--surface); padding: 35px; border-radius: 12px; border: 1px solid var(--border); text-align: center; width: 100%; max-width: 320px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .auth-card input { width: 100%; padding: 12px; margin-bottom: 15px; background: #1a1a1a; border: 1px solid var(--border); border-radius: 6px; color: #fff; box-sizing: border-box; outline: none; }
+        .auth-card input:focus { border-color: var(--green); }
+
+        /* Main Layout */
+        header { height: 60px; padding: 0 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); z-index: 100; }
         .main-container { display: flex; flex: 1; overflow: hidden; position: relative; }
         
-        .sidebar { width: 240px; border-right: 1px solid var(--border); padding: 25px; background: var(--bg); overflow-y: auto; transition: 0.3s; }
-        .main-content { flex: 1; padding: 30px; overflow-y: auto; padding-bottom: 150px; }
+        .sidebar { width: 250px; border-right: 1px solid var(--border); padding: 25px; background: var(--bg); overflow-y: auto; transition: 0.3s; flex-shrink: 0; }
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; padding-bottom: 160px; }
 
-        /* Mobile Adjustments */
+        /* Responsive Sidebar */
         @media (max-width: 768px) {
-            .sidebar { position: absolute; left: -240px; height: 100%; z-index: 50; }
-            .sidebar.open { left: 0; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
-            .player-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+            .sidebar { position: absolute; left: -250px; height: 100%; z-index: 50; }
+            .sidebar.open { left: 0; box-shadow: 10px 0 40px rgba(0,0,0,0.8); }
+            .player-grid { grid-template-columns: 1fr !important; gap: 15px !important; }
             .vol-area { display: none; }
+            .main-content { padding: 20px; }
         }
 
-        /* Song List */
-        .song-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; border-bottom: 1px solid var(--border); font-weight: 200; }
-        .song-row.active { color: var(--green); border-left: 2px solid var(--green); background: rgba(29, 185, 84, 0.05); }
+        /* Lists */
+        .pl-item { padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; font-size: 13px; color: #777; transition: 0.2s; }
+        .pl-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .pl-item.active { background: rgba(29, 185, 84, 0.1); color: var(--green); font-weight: 600; }
 
-        /* Player */
-        footer { background: #0a0a0a; border-top: 1px solid var(--border); padding: 15px 30px; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; z-index: 100; }
-        .player-grid { display: grid; grid-template-columns: 180px 1fr 180px; align-items: center; gap: 40px; max-width: 1400px; margin: 0 auto; }
+        .song-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 10px; border-bottom: 1px solid var(--border); transition: 0.2s; }
+        .song-row:hover { background: rgba(255,255,255,0.03); }
+        .song-row.active { color: var(--green); background: rgba(29, 185, 84, 0.05); border-left: 3px solid var(--green); }
+
+        /* Fixed Footer Player */
+        footer { height: 110px; background: #0a0a0a; border-top: 1px solid var(--border); padding: 0 30px; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; z-index: 100; display: flex; align-items: center; }
+        .player-grid { display: grid; grid-template-columns: 200px 1fr 200px; align-items: center; gap: 40px; width: 100%; max-width: 1400px; margin: 0 auto; }
         
-        .play-circle { width: 45px; height: 45px; border: 1px solid var(--text); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; background: none; color: inherit; }
+        .play-circle { width: 50px; height: 50px; border: 1px solid var(--text); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; background: none; color: inherit; transition: 0.2s; flex-shrink: 0; }
         .play-circle:hover { background: var(--text); color: #000; }
 
-        input[type="range"] { -webkit-appearance: none; background: #333; height: 1px; outline: none; width: 100%; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: var(--green); cursor: pointer; }
+        input[type="range"] { -webkit-appearance: none; background: #333; height: 2px; outline: none; width: 100%; border-radius: 2px; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%; background: var(--green); cursor: pointer; border: 2px solid #000; }
 
-        /* Dropdown */
-        .user-menu { position: relative; cursor: pointer; font-size: 11px; letter-spacing: 1px; }
-        .dropdown { position: absolute; top: 100%; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; display: none; width: 170px; margin-top: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
-        .dropdown div { padding: 12px; border-bottom: 1px solid var(--border); }
+        /* User Menu */
+        .user-menu { position: relative; cursor: pointer; }
+        .dropdown { position: absolute; top: 100%; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; display: none; width: 180px; margin-top: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.6); overflow: hidden; }
+        .dropdown div { padding: 15px; font-size: 11px; letter-spacing: 1px; border-bottom: 1px solid var(--border); }
         .dropdown div:hover { background: var(--green); color: #000; }
 
-        .btn-slim { background: transparent; border: 1px solid var(--green); color: var(--green); padding: 8px 15px; border-radius: 2px; cursor: pointer; font-size: 10px; font-weight: 600; }
+        .btn-slim { background: transparent; border: 1px solid var(--green); color: var(--green); padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; text-transform: uppercase; transition: 0.2s; }
+        .btn-slim:hover { background: var(--green); color: #000; }
     </style>
 </head>
 <body class="dark-theme">
 
     <div id="auth-screen">
         <div class="auth-card">
-            <h1 style="font-weight:200; letter-spacing:4px; font-size:1.5rem">GIG<span>MASTER</span></h1>
-            <input type="email" id="email" placeholder="Email" style="width:100%; padding:10px; margin:10px 0; background:#1a1a1a; border:1px solid var(--border); color:#fff; box-sizing:border-box;">
-            <input type="password" id="pass" placeholder="Senha" style="width:100%; padding:10px; margin-bottom:20px; background:#1a1a1a; border:1px solid var(--border); color:#fff; box-sizing:border-box;">
-            <button class="btn-slim" style="width:100%; background:var(--green); color:#000;" onclick="login('in')">LOGAR</button>
-            <button class="btn-slim" style="width:100%; margin-top:10px; border-color:#444; color:#888;" onclick="login('up')">CRIAR CONTA</button>
-            <p id="msg" style="font-size:10px; color:var(--green); margin-top:10px;"></p>
+            <h1 style="font-weight:200; letter-spacing:6px; font-size:1.8rem; margin:0 0 30px 0;">GIG<span>MASTER</span></h1>
+            <input type="email" id="login-email" placeholder="E-mail">
+            <input type="password" id="login-pass" placeholder="Senha">
+            <button class="btn-slim" style="width:100%; background:var(--green); color:#000; margin-bottom:12px;" onclick="handleAuth('in')">ENTRAR</button>
+            <button class="btn-slim" style="width:100%; border-color:#444; color:#888;" onclick="handleAuth('up')">CRIAR CONTA</button>
+            <p id="auth-msg" style="font-size:11px; color:var(--green); margin-top:15px;"></p>
+        </div>
+    </div>
+
+    <div id="pix-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:3000; align-items:center; justify-content:center;" onclick="this.style.display='none'">
+        <div style="background:var(--surface); padding:30px; border-radius:12px; text-align:center; width:300px; border:1px solid var(--border);" onclick="event.stopPropagation()">
+            <b style="letter-spacing:2px; font-size:12px;">APOIE O GIGMASTER</b><br><br>
+            <img src="pix.jpg" style="width:100%; border-radius:8px; box-shadow: 0 10px 20px rgba(0,0,0,0.3);">
+            <br><br>
+            <button class="btn-slim" onclick="document.getElementById('pix-modal').style.display='none'">FECHAR</button>
         </div>
     </div>
 
     <div id="app" style="display:none; flex-direction:column; height:100vh;">
         <header>
-            <div style="display:flex; align-items:center; gap:15px;">
-                <span onclick="toggleSidebar()" style="cursor:pointer; font-size:20px;" id="menu-icon">☰</span>
-                <b style="font-weight:200; font-size:14px; letter-spacing:1px;">GIGMASTER <span style="color:var(--green); font-weight:600;">PRO</span></b>
+            <div style="display:flex; align-items:center; gap:20px;">
+                <span onclick="toggleSidebar()" style="cursor:pointer; font-size:24px; color:var(--green);" id="menu-icon">☰</span>
+                <b style="font-weight:200; font-size:16px; letter-spacing:2px;">GIGMASTER <span style="color:var(--green); font-weight:600;">PRO</span></b>
             </div>
             <div class="user-menu" onclick="toggleDrop()">
-                <span id="user-display">CONTA ▼</span>
+                <span id="user-display" style="font-size:11px; font-weight:600; opacity:0.8;">CONTA ▼</span>
                 <div class="dropdown" id="dropdown">
                     <div onclick="toggleTheme()">🌓 ALTERAR TEMA</div>
                     <div onclick="document.getElementById('pix-modal').style.display='flex'">💎 DOAÇÃO PIX</div>
-                    <div onclick="logout()" style="color:#ff4d4d">🚪 SAIR</div>
+                    <div onclick="logout()" style="color:#ff4d4d">🚪 SAIR DO APP</div>
                 </div>
             </div>
         </header>
 
         <div class="main-container">
             <div class="sidebar" id="sidebar">
-                <button class="btn-slim" style="width:100%" onclick="addPl()">+ NOVA PASTA</button>
-                <div id="pl-list" style="margin-top:20px;"></div>
+                <button class="btn-slim" style="width:100%; font-size:10px;" onclick="addPl()">+ NOVA PASTA</button>
+                <div id="pl-list" style="margin-top:25px;"></div>
             </div>
             <div class="main-content">
-                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:30px;">
-                    <h2 id="pl-title" style="font-weight:200; margin:0; font-size:1.8rem;">Biblioteca</h2>
-                    <label class="btn-slim" id="btn-up" style="display:none;">UPLOAD MP3 <input type="file" id="up-mp3" hidden></label>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:35px;">
+                    <h2 id="pl-title" style="font-weight:200; margin:0; font-size:2rem; letter-spacing:-1px;">Biblioteca</h2>
+                    <label class="btn-slim" id="btn-up" style="display:none; font-size:10px;">UPLOAD MP3 <input type="file" id="up-mp3" hidden></label>
                 </div>
-                <button id="btn-zip" class="btn-slim" style="display:none; margin-bottom:20px; width:100%; border-color:#444; color:#888" onclick="downloadZip()">BAIXAR PASTA (.ZIP)</button>
+                <button id="btn-zip" class="btn-slim" style="display:none; margin-bottom:25px; width:100%; border-color:#333; color:#666; font-size:10px;" onclick="downloadZip()">BAIXAR PASTA COMPLETA (.ZIP)</button>
                 <div id="song-list"></div>
             </div>
         </div>
 
         <footer>
             <div class="player-grid">
-                <div style="display:flex; flex-direction:column; gap:5px;">
-                    <small style="font-size:8px; color:#555; letter-spacing:1px;">PITCH CONTROL</small>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <input type="range" id="p-slide" min="-7" max="7" value="0" style="width:60px">
-                        <b id="p-val" style="color:var(--green); font-size:12px; width:15px">0</b>
-                        <svg onclick="savePitch()" viewBox="0 0 24 24" width="16" style="fill:var(--green); cursor:pointer;"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <small style="font-size:9px; color:#555; letter-spacing:2px; font-weight:600;">PITCH</small>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <input type="range" id="p-slide" min="-7" max="7" value="0" style="width:70px">
+                        <b id="p-val" style="color:var(--green); font-size:14px; width:20px; text-align:center;">0</b>
+                        <svg onclick="savePitch()" viewBox="0 0 24 24" width="18" style="fill:var(--green); cursor:pointer; opacity:0.7;"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
                     </div>
                 </div>
 
-                <div style="display:flex; align-items:center; gap:20px;">
+                <div style="display:flex; align-items:center; gap:25px;">
                     <button id="play-btn" class="play-circle">
-                        <svg id="svg-play" viewBox="0 0 24 24" width="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        <svg id="svg-play" viewBox="0 0 24 24" width="22" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                     </button>
                     <div style="flex:1;">
-                        <div id="now-playing" style="font-size:10px; color:#666; margin-bottom:5px; text-transform:uppercase; text-align:center;">Selecione uma faixa</div>
+                        <div id="now-playing" style="font-size:11px; color:#666; margin-bottom:8px; text-transform:uppercase; text-align:center; letter-spacing:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Station Standby</div>
                         <input type="range" id="seek-slide" value="0" step="0.1">
                     </div>
                 </div>
 
-                <div class="vol-area" style="display:flex; align-items:center; justify-content:flex-end; gap:10px;">
-                    <svg viewBox="0 0 24 24" width="14" fill="#444"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-                    <input type="range" id="v-slide" min="-40" max="6" value="0" style="width:80px">
+                <div class="vol-area" style="display:flex; align-items:center; justify-content:flex-end; gap:15px;">
+                    <svg viewBox="0 0 24 24" width="16" fill="#444"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                    <input type="range" id="v-slide" min="-40" max="6" value="0" style="width:90px">
                 </div>
             </div>
         </footer>
-    </div>
-
-    <div id="pix-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; align-items:center; justify-content:center;" onclick="this.style.display='none'">
-        <div style="background:var(--surface); padding:25px; border-radius:8px; text-align:center; width:280px;" onclick="event.stopPropagation()">
-            <img src="pix.jpg" style="width:100%; border-radius:4px; margin-bottom:15px;">
-            <button class="btn-slim" onclick="document.getElementById('pix-modal').style.display='none'">FECHAR</button>
-        </div>
     </div>
 
     <script>
@@ -393,17 +161,39 @@
 
         let curPl = null, curSongId = null, allSongs = [];
 
-        async function login(type) {
-            const email = document.getElementById('email').value, password = document.getElementById('pass').value;
-            const { data, error } = type === 'in' ? await sb.auth.signInWithPassword({ email, password }) : await sb.auth.signUp({ email, password });
-            if(error) alert(error.message);
-            else if(type === 'up') document.getElementById('msg').innerText = "Conta criada! Faça login.";
-            else check();
+        // Auth Corrigido
+        async function handleAuth(type) {
+            const emailInput = document.getElementById('login-email');
+            const passInput = document.getElementById('login-pass');
+            const email = emailInput.value.trim();
+            const password = passInput.value.trim();
+
+            if (!email || !password) {
+                alert("Por favor, preencha e-mail e senha.");
+                return;
+            }
+
+            const { data, error } = type === 'in' 
+                ? await sb.auth.signInWithPassword({ email, password }) 
+                : await sb.auth.signUp({ email, password });
+
+            if(error) {
+                alert(error.message);
+            } else if(type === 'up') {
+                document.getElementById('auth-msg').innerText = "Conta criada! Agora clique em ENTRAR.";
+            } else {
+                checkSession();
+            }
         }
 
-        async function check() {
+        async function checkSession() {
             const { data: { session } } = await sb.auth.getSession();
-            if(session) { document.getElementById('auth-screen').style.display = 'none'; document.getElementById('app').style.display = 'flex'; document.getElementById('user-display').innerText = session.user.email.split('@')[0].toUpperCase() + ' ▼'; loadPl(); }
+            if(session) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                document.getElementById('user-display').innerText = session.user.email.split('@')[0].toUpperCase() + ' ▼';
+                loadPlaylists();
+            }
         }
 
         function logout() { sb.auth.signOut(); location.reload(); }
@@ -411,24 +201,27 @@
         function toggleDrop() { const d = document.getElementById('dropdown'); d.style.display = d.style.display === 'block' ? 'none' : 'block'; }
         function toggleTheme() { document.body.classList.toggle('light-theme'); }
 
-        async function loadPl() {
+        async function loadPlaylists() {
             const { data: { user } } = await sb.auth.getUser();
             const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
-            document.getElementById('pl-list').innerHTML = data.map(p => `<div onclick="selPl(${p.id},'${p.nome}')" style="cursor:pointer; padding:10px; font-size:12px;" class="${curPl==p.id?'active-song':''}">📂 ${p.nome.toUpperCase()}</div>`).join('');
+            document.getElementById('pl-list').innerHTML = data.map(p => `
+                <div onclick="selectPlaylist(${p.id},'${p.nome}')" class="pl-item ${curPl==p.id?'active':''}">
+                    📂 ${p.nome.toUpperCase()}
+                </div>`).join('');
         }
 
         async function addPl() {
             const n = prompt("Nome da Pasta:"); if(!n) return;
             const { data: { user } } = await sb.auth.getUser();
-            await sb.from('playlists').insert({ nome: n, user_id: user.id }); loadPl();
+            await sb.from('playlists').insert({ nome: n, user_id: user.id }); loadPlaylists();
         }
 
-        function selPl(id, n) { 
+        function selectPlaylist(id, n) { 
             curPl = id; document.getElementById('pl-title').innerText = n;
             document.getElementById('btn-up').style.display = 'block';
             document.getElementById('btn-zip').style.display = 'block';
             if(window.innerWidth < 768) toggleSidebar();
-            loadSongs(); loadPl(); 
+            loadSongs(); loadPlaylists(); 
         }
 
         async function loadSongs() {
@@ -437,14 +230,14 @@
             document.getElementById('song-list').innerHTML = data.map(s => `
                 <div class="song-row ${curSongId === s.id ? 'active' : ''}">
                     <div onclick="playSong('${s.audio_url}', ${s.pitch}, '${s.titulo}', ${s.id})" style="flex:1; cursor:pointer">
-                        <b>${s.titulo}</b> <small style="margin-left:10px; opacity:0.4">${s.pitch} ST</small>
+                        <b style="font-size:14px;">${s.titulo}</b> <small style="margin-left:12px; opacity:0.4; font-weight:600;">${s.pitch} ST</small>
                     </div>
-                    <span onclick="delSong(${s.id})" style="opacity:0.3; cursor:pointer">✕</span>
+                    <span onclick="deleteSong(${s.id})" style="opacity:0.3; cursor:pointer; padding:5px;">✕</span>
                 </div>`).join('');
         }
 
         async function playSong(url, pitch, titulo, id) {
-            curSongId = id; document.getElementById('now-playing').innerText = "CARREGANDO...";
+            curSongId = id; document.getElementById('now-playing').innerText = "CARREGANDO ÁUDIO...";
             player.stop(); player.unsync(); Tone.Transport.stop();
             await player.load(url);
             shift.pitch = pitch;
@@ -466,8 +259,21 @@
 
         async function downloadZip() {
             const zip = new JSZip();
-            for (let s of allSongs) { const r = await fetch(s.audio_url); const b = await r.blob(); zip.file(`${s.titulo}.mp3`, b); }
-            const c = await zip.generateAsync({type:"blob"}); saveAs(c, `playlist.zip`);
+            for (let s of allSongs) { 
+                try {
+                    const r = await fetch(s.audio_url); 
+                    const b = await r.blob(); 
+                    zip.file(`${s.titulo}.mp3`, b); 
+                } catch(e) {}
+            }
+            const c = await zip.generateAsync({type:"blob"}); saveAs(c, `playlist_${document.getElementById('pl-title').innerText}.zip`);
+        }
+
+        async function deleteSong(id) {
+            if(confirm("Deseja apagar esta música?")) {
+                await sb.from('musicas').delete().eq('id', id);
+                loadSongs();
+            }
         }
 
         document.getElementById('play-btn').onclick = () => {
@@ -482,22 +288,15 @@
 
         document.getElementById('up-mp3').onchange = async (e) => {
             const file = e.target.files[0];
-            const path = `audios/${Date.now()}_${file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase()}`;
+            const cleanName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+            const path = `audios/${Date.now()}_${cleanName}`;
             await sb.storage.from('audios').upload(path, file);
             const { data: { publicUrl } } = sb.storage.from('audios').getPublicUrl(path);
             await sb.from('musicas').insert({ titulo: file.name, audio_url: publicUrl, playlist_id: curPl, pitch: 0 });
             loadSongs();
         };
 
-        check();
-    </script>
-</body>
-</html>th);
-            await sb.from('musicas').insert({ titulo: file.name, audio_url: publicUrl, playlist_id: curPl, pitch: 0 });
-            loadSongs();
-        };
-
-        check();
+        checkSession();
     </script>
 </body>
 </html>
