@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v26.1</title>
+    <title>GIGMASTER PRO | v26.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
@@ -14,22 +14,30 @@
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
         header { height: 60px; padding: 0 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); z-index: 500; }
+        .u-badge { background: var(--border); padding: 6px 15px; border-radius: 20px; font-size: 11px; cursor: pointer; position: relative; }
+        
+        /* MENU DO USUÁRIO RESTAURADO */
+        .drop-menu { position: absolute; top: 50px; right: 0; background: var(--surface); border: 1px solid var(--border); display: none; width: 200px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 600; overflow: hidden; }
+        .drop-menu div { padding: 14px 18px; border-bottom: 1px solid var(--border); font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+        .drop-menu div:hover { background: rgba(255,255,255,0.05); }
+        .drop-menu div:last-child { border: none; }
+
         #toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: var(--green); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 12px; font-weight: 600; display: none; z-index: 4000; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
-        .modal-box { background: var(--surface); padding: 30px; border-radius: 24px; border: 1px solid var(--border); width: 90%; max-width: 360px; text-align: center; }
-        .modal-box input { width: 100%; padding: 14px; background: rgba(0,0,0,0.05); border: 1px solid var(--border); border-radius: 12px; color: var(--text); margin-bottom: 20px; }
+        /* MODAIS */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px); }
+        .modal-box { background: var(--surface); padding: 30px; border-radius: 24px; border: 1px solid var(--border); width: 100%; max-width: 360px; text-align: center; }
+        .modal-box input, .modal-box textarea { width: 100%; padding: 14px; background: rgba(0,0,0,0.05); border: 1px solid var(--border); border-radius: 12px; color: var(--text); margin-bottom: 20px; font-family: inherit; }
 
+        /* LAYOUT */
+        .main-container { display: flex; flex: 1; overflow: hidden; }
         .sidebar { width: 280px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
         .main-content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 180px; }
         
         .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 10px; background: rgba(255,255,255,0.03); cursor: pointer; font-size: 11px; }
         .pl-item.active { background: var(--green); color: #fff; }
 
-        .song-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
-        .song-row.active { border-left: 4px solid var(--green); background: rgba(29, 185, 84, 0.1); color: var(--green); }
-
-        footer { background: var(--surface); border-top: 1px solid var(--border); padding: 15px 25px; position: fixed; bottom: 0; width: 100%; height: 150px; }
+        footer { background: var(--surface); border-top: 1px solid var(--border); padding: 15px 25px; position: fixed; bottom: 0; width: 100%; height: 150px; z-index: 500; }
         .btn-slim { padding: 12px 18px; border-radius: 12px; border: 1px solid var(--green); color: var(--green); background: transparent; font-size: 10px; font-weight: 600; cursor: pointer; text-transform: uppercase; }
         @media (max-width: 768px) { .sidebar { display: none; } }
     </style>
@@ -39,7 +47,31 @@
     <div id="toast">AVISO</div>
 
     <div id="master-modal" class="modal-overlay">
-        <div class="modal-box"><h3 id="mm-title" style="color:var(--green)"></h3><p id="mm-text" style="font-size:12px; color:var(--sub)"></p><input type="text" id="mm-input" style="display:none;"><div style="display:flex; gap:12px;"><button class="btn-slim" id="mm-cancel" style="flex:1">CANCELAR</button><button class="btn-slim" id="mm-confirm" style="flex:1; background:var(--green); color:#fff; border:none;">OK</button></div></div>
+        <div class="modal-box">
+            <h3 id="mm-title" style="color:var(--green)">Título</h3>
+            <p id="mm-text" style="font-size:12px; color:var(--sub); margin-bottom:15px;"></p>
+            <input type="text" id="mm-input" style="display:none;" placeholder="Digite aqui...">
+            <div style="display:flex; gap:12px;">
+                <button class="btn-slim" id="mm-cancel" style="flex:1; border-color:var(--sub); color:var(--sub)">CANCELAR</button>
+                <button class="btn-slim" id="mm-confirm" style="flex:1; background:var(--green); color:#fff; border:none;">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-bug" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color:var(--green)">RELATAR BUG</h3>
+            <textarea id="bug-desc" rows="4" placeholder="O que aconteceu?"></textarea>
+            <div style="display:flex; gap:10px;"><button class="btn-slim" onclick="closeM('modal-bug')" style="flex:1">VOLTAR</button><button class="btn-slim" onclick="submitBug()" style="flex:1; background:var(--green); color:#fff; border:none;">ENVIAR</button></div>
+        </div>
+    </div>
+
+    <div id="modal-pix" class="modal-overlay" onclick="closeM('modal-pix')">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <h3>APOIAR VIA PIX</h3>
+            <img src="pix.jpg" style="width:100%; border-radius:15px; margin:20px 0; border:1px solid var(--border);">
+            <button class="btn-slim" style="width:100%; background:var(--green); color:#fff; border:none;" onclick="closeM('modal-pix')">FECHAR</button>
+        </div>
     </div>
 
     <div id="auth-screen" style="position:fixed; inset:0; background:#000; z-index:2000; display:flex; align-items:center; justify-content:center;">
@@ -56,15 +88,17 @@
         <header>
             <div style="font-weight:600; font-size:14px;">GIGMASTER <span style="color:var(--green)">PRO</span></div>
             <div class="u-badge" onclick="toggleD()"><span id="u-display">PERFIL</span> ▼
-                <div class="drop-menu" id="u-drop" style="display:none; position:absolute; right:0; top:50px; background:var(--surface); border:1px solid var(--border); width:180px; border-radius:8px; z-index:1000;">
-                    <div onclick="toggleT()" style="padding:12px; border-bottom:1px solid var(--border); font-size:11px;">🌓 TEMA</div>
-                    <div onclick="uiRenameNick()" style="padding:12px; border-bottom:1px solid var(--border); font-size:11px;">👤 NICKNAME</div>
-                    <div onclick="logout()" style="padding:12px; color:#ff4d4d; font-size:11px;">🚪 SAIR</div>
+                <div class="drop-menu" id="u-drop">
+                    <div onclick="toggleT()">🌓 TEMA</div>
+                    <div onclick="uiRenameNick()">👤 NICKNAME</div>
+                    <div onclick="openM('modal-bug')" style="color:var(--green)">🐞 RELATAR BUG</div>
+                    <div onclick="openM('modal-pix')">💎 APOIAR PIX</div>
+                    <div onclick="logout()" style="color:#ff4d4d">🚪 SAIR</div>
                 </div>
             </div>
         </header>
 
-        <div style="display:flex; flex:1; overflow:hidden;">
+        <div class="main-container">
             <div class="sidebar"><button class="btn-slim" style="width:100%; background:var(--green); color:#fff; border:none;" onclick="uiAddFolder()">+ NOVA PASTA</button><div id="pl-list" style="margin-top:20px;"></div></div>
             <div class="main-content">
                 <h2 id="pl-title" style="margin:0 0 20px 0; font-weight:200;">Biblioteca</h2>
@@ -97,13 +131,9 @@
         const SB_KEY = 'sb_publishable_ercRd8vFjpnVyXf0WiPVSw_tWCSmsGm';
         const sb = supabase.createClient(SB_URL, SB_KEY);
         
-        // --- NOVO SETUP DE SINAL (ROUTING) ---
         const player = new Tone.Player();
         const shift = new Tone.PitchShift(0);
-        
-        // CORRENTE: Player -> PitchShift -> Saída (Destination)
-        player.connect(shift);
-        shift.toDestination();
+        player.connect(shift).toDestination();
 
         let curPl = null, curSId = null;
 
@@ -141,43 +171,32 @@
                 </div>`).join('');
         }
 
-        // --- PLAY FIX ---
         async function playS(url, p, tit, id) {
             try {
                 await Tone.start();
                 curSId = id;
-                document.getElementById('cur-track').innerText = "CARREGANDO...";
-                
+                document.getElementById('cur-track').innerText = "SINCRONIZANDO...";
                 player.stop();
-                // Baixa o arquivo para garantir que o Opera não bloqueie o streaming
                 const response = await fetch(url);
                 const blob = await response.blob();
                 const objectUrl = URL.createObjectURL(blob);
-                
                 await player.load(objectUrl);
-                
-                // Aplica o Pitch ANTES de dar o play
                 shift.pitch = p;
                 document.getElementById('p-slide').value = p;
                 document.getElementById('p-val').innerText = p;
-
                 document.getElementById('seek').max = player.buffer.duration;
                 document.getElementById('cur-track').innerText = tit;
-                
                 player.start();
                 document.getElementById('play-path').setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
                 loadSongs();
                 showToast("TOCANDO!");
             } catch (err) {
                 document.getElementById('cur-track').innerText = "ERRO: TENTE NOVAMENTE";
-                console.error(err);
             }
         }
 
-        // --- PITCH SHIFT REALTIME FIX ---
         document.getElementById('p-slide').oninput = (e) => { 
             const v = parseFloat(e.target.value); 
-            // Garante que o efeito está ligado à saída
             shift.pitch = v; 
             document.getElementById('p-val').innerText = v; 
         };
@@ -214,9 +233,12 @@
         function uiAddFolder() { showModal({ title: "NOVA PASTA", input: true, onConfirm: async (n) => { const {data:{user}} = await sb.auth.getUser(); await sb.from('playlists').insert({nome:n, user_id:user.id}); loadPl(); }}); }
         function uiDelSong(id) { showModal({ title: "REMOVER", onConfirm: async () => { await sb.from('musicas').delete().eq('id', id); loadSongs(); }}); }
         function uiRenameNick() { showModal({ title: "NICKNAME", input: true, onConfirm: async (n) => { const {data:{user}} = await sb.auth.getUser(); await sb.from('profiles').upsert({id:user.id, username:n}); document.getElementById('u-display').innerText = n.toUpperCase(); }}); }
+        async function submitBug() { const d = document.getElementById('bug-desc').value; const {data:{user}} = await sb.auth.getUser(); await sb.from('bugs').insert({user_id:user.id, description:d, user_email:user.email}); alert("Enviado!"); closeM('modal-bug'); }
         function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2000); }
         function toggleD() { const d = document.getElementById('u-drop'); d.style.display = d.style.display==='block'?'none':'block'; }
         function toggleT() { document.body.classList.toggle('light-theme'); }
+        function openM(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeM(id) { document.getElementById(id).style.display = 'none'; }
         async function logout() { await sb.auth.signOut(); location.reload(); }
 
         document.getElementById('up-file').onchange = async (e) => {
