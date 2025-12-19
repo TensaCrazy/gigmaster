@@ -3,152 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v21.2</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
-    <style>
-        :root { --green: #1db954; --bg: #0b0b0b; --surface: #121212; --border: #282828; --text: #fff; --sub: #888; }
-        body.light-theme { --bg: #f0f0f0; --surface: #ffffff; --border: #ddd; --text: #111; --sub: #666; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-
-        /* HEADER & MENU */
-        header { height: 60px; padding: 0 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); z-index: 500; }
-        .u-badge { background: var(--border); padding: 6px 15px; border-radius: 20px; font-size: 11px; cursor: pointer; position: relative; }
-        .drop-menu { position: absolute; top: 50px; right: 0; background: var(--surface); border: 1px solid var(--border); display: none; width: 180px; border-radius: 8px; box-shadow: 0 10px 30px #000; z-index: 600; }
-        .drop-menu div { padding: 12px 15px; border-bottom: 1px solid var(--border); font-size: 12px; }
-        .drop-menu div:hover { background: var(--green); color: #000; }
-
-        /* AUTH SCREEN */
-        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .auth-card { background: var(--surface); padding: 30px; border-radius: 15px; border: 1px solid var(--border); text-align: center; width: 100%; max-width: 350px; }
-        .auth-card input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 6px; border: 1px solid var(--border); background: #1a1a1a; color: #fff; }
-        
-        /* MODAIS */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); }
-        .modal-box { background: var(--surface); padding: 25px; border-radius: 12px; border: 1px solid var(--border); width: 100%; max-width: 320px; text-align: center; }
-        .modal-box textarea { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); margin-bottom: 15px; font-family: inherit; resize: none; }
-
-        /* LAYOUT */
-        .main-container { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 280px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
-        .main-content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 180px; }
-        .btn-slim { padding: 10px 15px; border-radius: 6px; border: 1px solid var(--green); color: var(--green); background: transparent; font-size: 10px; font-weight: 600; cursor: pointer; text-transform: uppercase; }
-        .btn-fill { background: var(--green); color: #000; border: none; }
-        
-        footer { background: var(--surface); border-top: 1px solid var(--border); padding: 15px 25px; position: fixed; bottom: 0; width: 100%; height: 150px; z-index: 500; }
-        @media (max-width: 768px) { .sidebar { display: none; } }
-    </style>
-</head>
-<body>
-
-    <div id="modal-bug" class="modal-overlay">
-        <div class="modal-box">
-            <h3 style="margin:0 0 10px 0; font-weight:400">RELATAR UM PROBLEMA</h3>
-            <p style="font-size:11px; color:var(--sub); margin-bottom:15px;">Descreva o erro encontrado para que possamos ajudá-lo:</p>
-            <textarea id="bug-desc" rows="4" placeholder="O que aconteceu?"></textarea>
-            <div style="display:flex; gap:10px;">
-                <button class="btn-slim" onclick="closeM('modal-bug')" style="border-color:var(--sub); color:var(--sub)">CANCELAR</button>
-                <button class="btn-slim btn-fill" onclick="submitBug()">ENVIAR FEEDBACK</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="auth-screen">
-        <div class="auth-card">
-            <h2 style="letter-spacing:4px; margin-bottom:25px; font-weight:200">GIGMASTER</h2>
-            <input type="email" id="a-email" placeholder="E-mail">
-            <input type="password" id="a-pass" placeholder="Senha">
-            <button class="btn-slim btn-fill" onclick="handleAuth('in')" style="width:100%; height:45px; margin-bottom:10px;">ENTRAR</button>
-            <button class="btn-slim" onclick="handleAuth('up')" style="width:100%; border-color:#444; color:var(--sub); margin-bottom:20px;">CRIAR CONTA</button>
-
-            <div style="display:flex; align-items:center; margin-bottom:20px;">
-                <hr style="flex:1; border:0; border-top:1px solid var(--border)">
-                <span style="padding:0 10px; font-size:10px; color:var(--sub)">OU ACESSE COM</span>
-                <hr style="flex:1; border:0; border-top:1px solid var(--border)">
-            </div>
-
-            <button class="btn-slim" onclick="loginSocial('google')" style="width:100%; border-color:#444; color:#fff; display:flex; align-items:center; justify-content:center; gap:10px;">
-                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="16"> ENTRAR COM GOOGLE
-            </button>
-        </div>
-    </div>
-
-    <div id="app" style="display:none; flex-direction:column; height:100vh;">
-        <header>
-            <div style="font-weight:600; font-size:14px;">GIGMASTER <span style="color:var(--green)">PRO</span></div>
-            <div class="u-badge" onclick="toggleD()">
-                <span id="u-display">CONTA</span> ▼
-                <div class="drop-menu" id="u-drop">
-                    <div onclick="toggleT()">🌓 ALTERAR TEMA</div>
-                    <div onclick="openM('modal-bug')" style="color:var(--green)">🐞 RELATAR BUG</div>
-                    <div onclick="logout()" style="color:#ff4d4d">🚪 SAIR</div>
-                </div>
-            </div>
-        </header>
-
-        <div class="main-container">
-            <div class="sidebar">
-                <button class="btn-slim" style="width:100%" onclick="addFold()">+ NOVA PASTA</button>
-                <div id="pl-list" style="margin-top:20px;"></div>
-            </div>
-            <div class="main-content">
-                <h2 id="pl-title" style="margin:0 0 20px 0; font-weight:200; font-size:1.8rem;">Biblioteca</h2>
-                <div id="song-list"></div>
-            </div>
-        </div>
-
-        <footer>
-            <div id="cur-track" style="text-align:center; font-size:11px; color:var(--green); margin-bottom:10px;">Standby</div>
-            <input type="range" id="v-slide" min="-40" max="6" value="0" style="width:100px; display:block; margin: 0 auto;">
-        </footer>
-    </div>
-
-    <script>
-        const SB_URL = 'https://mdtqwugkaonipbfqqvhj.supabase.co';
-        const SB_KEY = 'sb_publishable_ercRd8vFjpnVyXf0WiPVSw_tWCSmsGm';
-        const sb = supabase.createClient(SB_URL, SB_KEY);
-        
-        const player = new Tone.Player().toDestination();
-
-        // --- AUTH & LOGOUT ---
-        async function handleAuth(type) {
-            const email = document.getElementById('a-email').value;
-            const pass = document.getElementById('a-pass').value;
-            const { error } = type === 'in' ? await sb.auth.signInWithPassword({ email, password:pass }) : await sb.auth.signUp({ email, password:pass });
-            if(error) alert(error.message); else checkSession();
-        }
-
-        async function loginSocial(provider) {
-            const { error } = await sb.auth.signInWithOAuth({ 
-                provider: provider,
-                options: { redirectTo: window.location.origin }
-            });
-            if(error) alert(error.message);
-        }
-
-        async function checkSession() {
-            const { data: { session } } = await sb.auth.getSession();
-            if(session) {
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('app').style.display = 'flex';
-                document.getElementById('u-display').innerText = session.user.email.split('@')[0].toUpperCase();
-            } else {
-                document.getElementById('app').style.display = 'none';
-                document.getElementById('auth-screen').style.display = 'flex';
-            }
-        }
-
-        async function logout() {
-            await sb.auth.signOut();<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v21.3</title>
+    <title>GIGMASTER PRO | v21.4</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -219,12 +74,12 @@
     <div id="auth-screen" style="position:fixed; inset:0; background:var(--bg); z-index:2000; display:flex; align-items:center; justify-content:center; padding:20px;">
         <div class="auth-card" style="background:var(--surface); padding:30px; border-radius:15px; border:1px solid var(--border); text-align:center; width:100%; max-width:350px;">
             <h2 style="letter-spacing:4px; margin-bottom:25px; font-weight:200">GIGMASTER</h2>
-            <input type="email" id="a-email" placeholder="E-mail">
-            <input type="password" id="a-pass" placeholder="Senha">
+            <input type="email" id="login-email" placeholder="E-mail" autocomplete="email">
+            <input type="password" id="login-pass" placeholder="Senha" autocomplete="current-password">
             <button class="btn-slim btn-fill" onclick="handleAuth('in')" style="width:100%; height:45px; margin-bottom:10px;">ENTRAR</button>
             <button class="btn-slim" onclick="handleAuth('up')" style="width:100%; border-color:#444; color:var(--sub); margin-bottom:20px;">CRIAR CONTA</button>
             <div style="display:flex; align-items:center; margin-bottom:20px;">
-                <hr style="flex:1; border:0; border-top:1px solid var(--border)"><span style="padding:0 10px; font-size:10px; color:var(--sub)">OU</span><hr style="flex:1; border:0; border-top:1px solid var(--border)">
+                <hr style="flex:1; border:0; border-top:1px solid var(--border)"><span style="padding:0 10px; font-size:10px; color:var(--sub)">OU ACESSE COM</span><hr style="flex:1; border:0; border-top:1px solid var(--border)">
             </div>
             <button class="btn-slim" onclick="loginSocial('google')" style="width:100%; border-color:#444; color:#fff; display:flex; align-items:center; justify-content:center; gap:10px;">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="16"> GOOGLE
@@ -257,7 +112,6 @@
                     <div style="display:flex; gap:10px;" id="action-bar">
                         <label class="btn-slim" id="btn-up" style="display:none; flex:1; text-align:center;">+ MP3 <input type="file" id="up-file" hidden></label>
                         <button id="btn-zip" class="btn-slim" style="display:none; flex:1; border-color:#444; color:#888" onclick="dlZip()">ZIP</button>
-                        <button id="btn-back" class="btn-slim" style="display:none; flex:1;" onclick="location.href=location.pathname">VOLTAR</button>
                     </div>
                 </div>
                 <div id="song-list"></div>
@@ -296,44 +150,44 @@
         player.connect(shift);
         shift.toDestination();
 
-        let curPl = null, curSId = null, allS = [], isSharedMode = false;
+        let curPl = null, curSId = null, allS = [];
 
-        // --- AUTH & SESSION ---
-        async function checkSession() {
-            const params = new URLSearchParams(window.location.search);
-            const shareId = params.get('share');
-            if(shareId) {
-                isSharedMode = true; document.getElementById('auth-screen').style.display = 'none'; document.getElementById('app').style.display = 'flex'; document.getElementById('sidebar').style.display = 'none'; document.getElementById('btn-back').style.display = 'block'; document.getElementById('save-p').style.display = 'none';
-                const { data } = await sb.from('playlists').select('nome').eq('id', shareId).single();
-                if(data) selPl(shareId, data.nome);
-            } else {
-                const { data: { session } } = await sb.auth.getSession();
-                if(session) {
-                    document.getElementById('auth-screen').style.display = 'none'; document.getElementById('app').style.display = 'flex';
-                    const { data: profile } = await sb.from('profiles').select('username').eq('id', session.user.id).single();
-                    document.getElementById('u-display').innerText = (profile?.username || session.user.email.split('@')[0]).toUpperCase();
-                    loadPl();
-                } else { document.getElementById('app').style.display = 'none'; document.getElementById('auth-screen').style.display = 'flex'; }
-            }
-        }
-
+        // --- AUTH CORRIGIDO ---
         async function handleAuth(type) {
-            const email = document.getElementById('a-email').value; const pass = document.getElementById('a-pass').value;
-            const { error } = type === 'in' ? await sb.auth.signInWithPassword({ email, password:pass }) : await sb.auth.signUp({ email, password:pass });
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+
+            if(!email || !pass) {
+                alert("Preencha o e-mail e a senha.");
+                return;
+            }
+
+            const { error } = type === 'in' ? 
+                await sb.auth.signInWithPassword({ email, password:pass }) : 
+                await sb.auth.signUp({ email, password:pass });
+
             if(error) alert(error.message); else checkSession();
         }
 
         async function loginSocial(p) { await sb.auth.signInWithOAuth({ provider: p, options: { redirectTo: window.location.origin }}); }
-        async function logout() { await sb.auth.signOut(); location.reload(); }
 
-        // --- UI GESTÃO ---
-        function showModal({title, text, input, onConfirm}) {
-            const o = document.getElementById('master-modal'); const i = document.getElementById('mm-input');
-            document.getElementById('mm-title').innerText = title; i.style.display = input ? 'block' : 'none'; i.value = ""; o.style.display = 'flex';
-            document.getElementById('mm-confirm').onclick = () => { onConfirm(input ? i.value : true); o.style.display = 'none'; };
-            document.getElementById('mm-cancel').onclick = () => o.style.display = 'none';
+        async function checkSession() {
+            const { data: { session } } = await sb.auth.getSession();
+            if(session) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                const { data: profile } = await sb.from('profiles').select('username').eq('id', session.user.id).single();
+                document.getElementById('u-display').innerText = (profile?.username || session.user.email.split('@')[0]).toUpperCase();
+                loadPl();
+            } else {
+                document.getElementById('app').style.display = 'none';
+                document.getElementById('auth-screen').style.display = 'flex';
+            }
         }
 
+        async function logout() { await sb.auth.signOut(); location.reload(); }
+
+        // --- RESTAURAÇÃO DE FUNÇÕES ---
         async function loadPl() {
             const { data: { user } } = await sb.auth.getUser(); if(!user) return;
             const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
@@ -348,73 +202,35 @@
                 </div>`).join('');
         }
 
-        function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; if(!isSharedMode) { document.getElementById('btn-up').style.display='block'; document.getElementById('btn-zip').style.display='block'; } loadSongs(); }
+        function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; document.getElementById('btn-up').style.display='block'; document.getElementById('btn-zip').style.display='block'; loadSongs(); }
+
         async function loadSongs() {
             const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl).order('titulo'); allS = data;
-            document.getElementById('song-list').innerHTML = data.map(s => `<div class="song-row ${curSId === s.id ? 'active' : ''}" onclick="playS('${s.audio_url}', ${s.pitch}, '${s.titulo}', ${s.id})"><div style="flex:1"><b>${s.titulo}</b> <small style="margin-left:8px; opacity:0.5">${s.pitch} ST</small></div><div style="display:flex; gap:15px; align-items:center"><svg onclick="event.stopPropagation(); dlMod('${s.audio_url}', ${s.pitch}, '${s.titulo}')" viewBox="0 0 24 24" width="16" fill="currentColor" style="opacity:0.4"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>${!isSharedMode ? `<span onclick="event.stopPropagation(); uiDelSong(${s.id},'${s.titulo}')" style="opacity:0.3">✕</span>` : ''}</div></div>`).join('');
+            document.getElementById('song-list').innerHTML = data.map(s => `<div class="song-row ${curSId === s.id ? 'active' : ''}" onclick="playS('${s.audio_url}', ${s.pitch}, '${s.titulo}', ${s.id})"><div style="flex:1"><b>${s.titulo}</b> <small style="margin-left:8px; opacity:0.5">${s.pitch} ST</small></div><div style="display:flex; gap:15px; align-items:center"><svg onclick="event.stopPropagation(); dlMod('${s.audio_url}', ${s.pitch}, '${s.titulo}')" viewBox="0 0 24 24" width="16" fill="currentColor" style="opacity:0.4"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg><span onclick="event.stopPropagation(); uiDelSong(${s.id},'${s.titulo}')" style="opacity:0.3">✕</span></div></div>`).join('');
         }
 
         async function playS(url, p, tit, id) {
-            await Tone.start(); curSId = id; document.getElementById('cur-track').innerText = "SINCRONIZANDO...";
-            player.stop(); player.unsync(); Tone.Transport.stop(); Tone.Transport.cancel(); await player.load(url);
+            await Tone.start(); curSId = id; document.getElementById('cur-track').innerText = "CARREGANDO...";
+            player.stop(); Tone.Transport.stop(); Tone.Transport.cancel(); await player.load(url);
             shift.pitch = p; document.getElementById('p-val').innerText = p; document.getElementById('p-slide').value = p;
             document.getElementById('seek').max = player.buffer.duration; document.getElementById('cur-track').innerText = tit;
             player.sync().start(0); Tone.Transport.start(); document.getElementById('svg-play').innerHTML = '<path fill="#000" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; loadSongs();
         }
 
-        // --- WRAPPERS ---
-        function uiAddFolder() { showModal({title:"NOVA PASTA", input:true, onConfirm: async (n) => { if(!n) return; const {data:{user}} = await sb.auth.getUser(); await sb.from('playlists').insert({nome:n, user_id:user.id}); loadPl(); }}); }
-        function uiRenFold(id, old) { showModal({title:"RENOMEAR", input:true, onConfirm: async (n) => { if(!n) return; await sb.from('playlists').update({nome:n}).eq('id', id); loadPl(); }}); }
-        function uiDelFold(id, n) { showModal({title:"EXCLUIR", text:`Apagar ${n}?`, onConfirm: async () => { await sb.from('musicas').delete().eq('playlist_id', id); await sb.from('playlists').delete().eq('id', id); loadPl(); }}); }
-        function uiDelSong(id, n) { showModal({title:"REMOVER", text:`Remover ${n}?`, onConfirm: async () => { await sb.from('musicas').delete().eq('id', id); loadSongs(); }}); }
-        function uiRenameNick() { showModal({title:"NICKNAME", input:true, onConfirm: async (n) => { if(!n) return; const {data:{user}} = await sb.auth.getUser(); await sb.from('profiles').upsert({id:user.id, username:n}); document.getElementById('u-display').innerText = n.toUpperCase(); }}); }
+        // --- OUTRAS FUNÇÕES ---
         function copyLink(id) { const url = `${window.location.origin}${window.location.pathname}?share=${id}`; navigator.clipboard.writeText(url).then(() => alert("Link copiado!")); }
+        function openM(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeM(id) { document.getElementById(id).style.display = 'none'; }
+        function toggleD() { const d = document.getElementById('u-drop'); d.style.display = d.style.display==='block'?'none':'block'; }
+        function toggleT() { document.body.classList.toggle('light-theme'); }
+        async function saveP() { if(curSId) { await sb.from('musicas').update({pitch: parseInt(document.getElementById('p-slide').value)}).eq('id', curSId); loadSongs(); } }
         
-        async function submitBug() {
-            const desc = document.getElementById('bug-desc').value; if(!desc) return;
-            const {data:{user}} = await sb.auth.getUser(); await sb.from('bugs').insert({user_id:user.id, description:desc, user_email:user.email});
-            alert("Feedback enviado!"); closeM('modal-bug');
-        }
-
-        // --- CONTROLES ---
+        // Controles de áudio
         document.getElementById('play-btn').onclick = () => { if(Tone.Transport.state === "started") { Tone.Transport.pause(); document.getElementById('svg-play').innerHTML = '<path fill="#000" d="M8 5v14l11-7z"/>'; } else { Tone.Transport.start(); document.getElementById('svg-play').innerHTML = '<path fill="#000" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; }};
         document.getElementById('v-slide').oninput = (e) => { Tone.Destination.volume.rampTo(parseFloat(e.target.value), 0.1); };
         document.getElementById('p-slide').oninput = (e) => { shift.pitch = e.target.value; document.getElementById('p-val').innerText = e.target.value; };
         document.getElementById('seek').oninput = (e) => { Tone.Transport.seconds = parseFloat(e.target.value); };
         setInterval(() => { if(Tone.Transport.state === "started") document.getElementById('seek').value = Tone.Transport.seconds; }, 500);
-
-        async function saveP() { if(curSId && !isSharedMode) { await sb.from('musicas').update({pitch: parseInt(document.getElementById('p-slide').value)}).eq('id', curSId); loadSongs(); } }
-        async function dlZip() { const zip = new JSZip(); for (let s of allS) { try { const r = await fetch(s.audio_url); const b = await r.blob(); zip.file(`${s.titulo}.mp3`, b); } catch(e){} } const c = await zip.generateAsync({type:"blob"}); saveAs(c, `playlist.zip`); }
-        async function dlMod(url, p, tit) { const buf = await (await fetch(url)).arrayBuffer(); const aBuf = await Tone.getContext().rawContext.decodeAudioData(buf); const rend = await Tone.Offline(() => { const ply = new Tone.Player(aBuf).toDestination(); const sft = new Tone.PitchShift(p).toDestination(); ply.connect(sft); ply.start(0); }, aBuf.duration); saveAs(new Blob([audioBufferToWav(rend)], { type: 'audio/wav' }), `${tit}_${p}ST.wav`); }
-        function audioBufferToWav(b) { let n = b.numberOfChannels, len = b.length * n * 2 + 44, bA = new ArrayBuffer(len), v = new DataView(bA), channels = [], i, s, off = 0, p = 0; function s32(d) { v.setUint32(p, d, true); p += 4; } function s16(d) { v.setUint16(p, d, true); p += 2; } s32(0x46464952); s32(len - 8); s32(0x45564157); s32(0x20746d66); s32(16); s16(1); s16(n); s32(b.sampleRate); s32(b.sampleRate * 2 * n); s16(n * 2); s16(16); s32(0x61746164); s32(len - p - 4); for(i=0; i<n; i++) channels.push(b.getChannelData(i)); while(p < len) { for(i=0; i<n; i++) { s = Math.max(-1, Math.min(1, channels[i][off])); s = (0.5 + s < 0 ? s * 32768 : s * 32767)|0; v.setInt16(p, s, true); p += 2; } off++; } return bA; }
-
-        document.getElementById('up-file').onchange = async (e) => { const f = e.target.files[0]; const path = `audios/${Date.now()}_${f.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase()}`; await sb.storage.from('audios').upload(path, f); const { data: { publicUrl } } = sb.storage.from('audios').getPublicUrl(path); await sb.from('musicas').insert({ titulo: f.name, audio_url: publicUrl, playlist_id: curPl, pitch: 0 }); loadSongs(); };
-        
-        function openM(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeM(id) { document.getElementById(id).style.display = 'none'; }
-        function toggleD() { const d = document.getElementById('u-drop'); d.style.display = d.style.display==='block'?'none':'block'; }
-        function toggleT() { document.body.classList.toggle('light-theme'); }
-
-        checkSession();
-    </script>
-</body>
-</html>
-            location.reload(); // Força a limpeza e volta pro login
-        }
-
-        // --- BUGS ---
-        function openM(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeM(id) { document.getElementById(id).style.display = 'none'; }
-        async function submitBug() {
-            const desc = document.getElementById('bug-desc').value;
-            if(!desc) return;
-            const { data: { user } } = await sb.auth.getUser();
-            const { error } = await sb.from('bugs').insert({ user_id: user.id, description: desc, user_email: user.email });
-            if(!error) { alert("Relatório enviado com sucesso!"); closeM('modal-bug'); }
-        }
-
-        function toggleD() { const d = document.getElementById('u-drop'); d.style.display = d.style.display==='block'?'none':'block'; }
-        function toggleT() { document.body.classList.toggle('light-theme'); }
 
         checkSession();
     </script>
