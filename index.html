@@ -3,53 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER RESET v17</title>
+    <title>GIGMASTER | Reset v17.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --green: #1db954; --bg: #000; --card: #121212; --text: #fff; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; }
-        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; }
-        .btn { padding: 12px 25px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; }
+        :root { --green: #1db954; --bg: #000; --card: #121212; --text: #fff; --border: #333; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* Auth Screen */
+        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 15px; }
+        .btn { padding: 12px 25px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-green { background: var(--green); color: #000; }
-        input { padding: 10px; border-radius: 5px; border: 1px solid #333; background: #111; color: #fff; width: 250px; }
-        #app { display: none; flex: 1; flex-direction: column; }
-        .sidebar { width: 250px; border-right: 1px solid #333; padding: 15px; }
-        .main-content { flex: 1; padding: 20px; overflow-y: auto; }
-        footer { background: #181818; padding: 20px; border-top: 1px solid #333; }
-        .player-ctrl { display: flex; align-items: center; gap: 20px; justify-content: center; }
+        .btn-outline { background: transparent; color: #fff; border: 1px solid #555; }
+        input { padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #111; color: #fff; width: 280px; }
+
+        /* App Layout */
+        #app { display: none; flex: 1; flex-direction: column; height: 100vh; }
+        header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #050505; }
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        
+        .sidebar { width: 260px; border-right: 1px solid var(--border); padding: 20px; overflow-y: auto; background: #080808; }
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; background: linear-gradient(to bottom, #111, #000); }
+
+        /* Music List */
+        .song-row { padding: 15px; border-bottom: 1px solid #222; cursor: pointer; transition: 0.2s; border-radius: 8px; margin-bottom: 5px; display: flex; justify-content: space-between; }
+        .song-row:hover { background: rgba(255,255,255,0.05); }
+        .active-song { background: rgba(29, 185, 84, 0.1) !important; color: var(--green); border-left: 4px solid var(--green); }
+
+        /* Player Footer */
+        footer { background: #121212; padding: 20px; border-top: 1px solid var(--border); position: fixed; bottom: 0; width: 100%; z-index: 100; }
+        .player-ctrl { display: flex; align-items: center; gap: 30px; justify-content: center; max-width: 1200px; margin: 0 auto; }
+        .play-btn { width: 55px; height: 55px; border-radius: 50%; background: #fff; border: none; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        input[type="range"] { accent-color: var(--green); cursor: pointer; }
     </style>
 </head>
 <body>
+
     <div id="auth-screen">
-        <h1>GIGMASTER</h1>
+        <h1 style="letter-spacing:-1px;">GIG<span>MASTER</span></h1>
         <input type="email" id="email" placeholder="E-mail">
         <input type="password" id="pass" placeholder="Senha">
-        <button class="btn btn-green" onclick="login()">ENTRAR / CRIAR CONTA</button>
-        <p id="msg"></p>
+        <button class="btn btn-green" style="width:280px" onclick="login()">ENTRAR / CRIAR CONTA</button>
+        <p id="msg" style="font-size:12px; color:var(--green)"></p>
     </div>
 
     <div id="app">
-        <header style="padding:15px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">
-            <b>GIGMASTER PRO</b>
-            <button onclick="logout()">SAIR</button>
+        <header>
+            <div style="font-weight:900; font-size:1.2rem;">GIGMASTER <span style="color:var(--green)">PRO</span></div>
+            <button class="btn-outline btn" onclick="logout()">SAIR</button>
         </header>
-        <div style="display:flex; flex:1;">
+        
+        <div class="main-container">
             <div class="sidebar">
-                <button onclick="addPl()">+ NOVA PASTA</button>
-                <div id="pl-list" style="margin-top:20px;"></div>
+                <button class="btn btn-outline" style="width:100%" onclick="addPl()">+ NOVA PASTA</button>
+                <div id="pl-list" style="margin-top:25px;"></div>
             </div>
             <div class="main-content">
-                <h2 id="pl-title">Músicas</h2>
-                <label class="btn btn-green">+ MP3<input type="file" id="up-mp3" hidden></label>
-                <div id="song-list" style="margin-top:20px;"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2 id="pl-title" style="margin:0">Biblioteca</h2>
+                    <label class="btn btn-green" id="btn-up" style="display:none;">+ IMPORTAR MP3 <input type="file" id="up-mp3" hidden></label>
+                </div>
+                <div id="song-list"></div>
             </div>
         </div>
+
         <footer>
             <div class="player-ctrl">
-                <button id="play-btn" style="width:50px; height:50px; border-radius:50%;">▶</button>
-                <div>TOM: <input type="range" id="p-slide" min="-7" max="7" value="0"> <b id="p-val">0</b></div>
-                <input type="range" id="seek-slide" style="width:300px;">
+                <div style="text-align:center;">
+                    <small style="color:#aaa; font-weight:bold;">TOM</small><br>
+                    <input type="range" id="p-slide" min="-7" max="7" value="0" style="width:80px"> <b id="p-val" style="color:var(--green)">0</b>
+                </div>
+                <button id="play-btn" class="play-btn">▶</button>
+                <div style="flex:1; max-width:500px;">
+                    <div id="now-playing" style="font-size:12px; margin-bottom:5px; color:#aaa; text-align:center;">Selecione uma música</div>
+                    <input type="range" id="seek-slide" value="0" step="0.1" style="width:100%">
+                </div>
             </div>
         </footer>
     </div>
@@ -58,19 +86,22 @@
         const SB_URL = 'https://mdtqwugkaonipbfqqvhj.supabase.co';
         const SB_KEY = 'sb_publishable_ercRd8vFjpnVyXf0WiPVSw_tWCSmsGm';
         const sb = supabase.createClient(SB_URL, SB_KEY);
+        
         const player = new Tone.Player();
         const shift = new Tone.PitchShift().toDestination();
         player.connect(shift);
 
         let curPl = null;
+        let curSongId = null;
 
+        // --- AUTH ---
         async function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('pass').value;
             const { error } = await sb.auth.signInWithPassword({ email, password });
             if(error) {
-                await sb.auth.signUp({ email, password });
-                document.getElementById('msg').innerText = "Conta criada! Logue agora.";
+                const { error: signUpErr } = await sb.auth.signUp({ email, password });
+                document.getElementById('msg').innerText = signUpErr ? signUpErr.message : "Conta criada! Entre agora.";
             } else { location.reload(); }
         }
 
@@ -83,54 +114,105 @@
             }
         }
 
+        function logout() { sb.auth.signOut(); location.reload(); }
+
+        // --- PLAYLISTS ---
         async function loadPl() {
             const { data: { user } } = await sb.auth.getUser();
             const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
-            document.getElementById('pl-list').innerHTML = data.map(p => `<div onclick="selPl(${p.id},'${p.nome}')" style="cursor:pointer; margin-bottom:10px;">📂 ${p.nome}</div>`).join('');
+            document.getElementById('pl-list').innerHTML = data.map(p => `
+                <div onclick="selPl(${p.id},'${p.nome}')" style="cursor:pointer; padding:10px; border-radius:5px; margin-bottom:5px;" class="${curPl==p.id?'active-song':''}">📂 ${p.nome}</div>
+            `).join('');
         }
 
         async function addPl() {
-            const n = prompt("Nome:");
+            const n = prompt("Nome da Pasta:");
+            if(!n) return;
             const { data: { user } } = await sb.auth.getUser();
             await sb.from('playlists').insert({ nome: n, user_id: user.id });
             loadPl();
         }
 
-        function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; loadSongs(); }
-
-        async function loadSongs() {
-            const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl);
-            document.getElementById('song-list').innerHTML = data.map(s => `<div onclick='play("${s.audio_url}", ${s.pitch})' style="padding:10px; border-bottom:1px solid #222;">🎵 ${s.titulo}</div>`).join('');
+        function selPl(id, n) { 
+            curPl = id; 
+            document.getElementById('pl-title').innerText = n; 
+            document.getElementById('btn-up').style.display = 'block';
+            loadSongs(); loadPl();
         }
 
+        // --- SONGS (FIXED SELECTION) ---
+        async function loadSongs() {
+            const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl);
+            document.getElementById('song-list').innerHTML = data.map(s => `
+                <div onclick="playSong('${s.audio_url}', ${s.pitch}, '${s.titulo.replace(/'/g, "\\'")}', ${s.id})" 
+                     class="song-row ${curSongId === s.id ? 'active-song' : ''}">
+                    <span>🎵 ${s.titulo}</span>
+                    <span style="font-weight:bold; color:var(--green);">${s.pitch > 0 ? '+'+s.pitch : s.pitch}</span>
+                </div>
+            `).join('');
+        }
+
+        async function playSong(url, pitch, titulo, id) {
+            try {
+                curSongId = id;
+                document.getElementById('now-playing').innerText = "Carregando: " + titulo;
+                await player.load(url);
+                
+                shift.pitch = pitch;
+                document.getElementById('p-val').innerText = pitch;
+                document.getElementById('p-slide').value = pitch;
+                document.getElementById('seek-slide').max = player.buffer.duration;
+                document.getElementById('now-playing').innerText = "Pronto: " + titulo;
+                loadSongs(); // Atualiza destaque visual
+            } catch (e) {
+                alert("Erro ao carregar áudio. Verifique se o Bucket 'audios' está Público.");
+            }
+        }
+
+        // --- UPLOAD ---
         document.getElementById('up-mp3').onchange = async (e) => {
-            if(!curPl) return alert("Selecione uma pasta!");
             const file = e.target.files[0];
             const path = `audios/${Date.now()}_${file.name}`;
-            await sb.storage.from('audios').upload(path, file);
+            document.getElementById('pl-title').innerText = "Enviando...";
+            
+            const { error: upErr } = await sb.storage.from('audios').upload(path, file);
+            if(upErr) return alert("Erro no Upload: " + upErr.message);
+
             const { data: { publicUrl } } = sb.storage.from('audios').getPublicUrl(path);
             await sb.from('musicas').insert({ titulo: file.name, audio_url: publicUrl, playlist_id: curPl, pitch: 0 });
+            
+            document.getElementById('pl-title').innerText = "Concluído!";
             loadSongs();
         };
 
-        async function play(url, p) {
-            await player.load(url);
-            shift.pitch = p;
-            document.getElementById('p-val').innerText = p;
-            document.getElementById('p-slide').value = p;
-            document.getElementById('seek-slide').max = player.buffer.duration;
-        }
-
+        // --- CONTROLS ---
         document.getElementById('play-btn').onclick = async () => {
             await Tone.start();
-            if(Tone.Transport.state === "started") { Tone.Transport.pause(); } 
-            else { Tone.Transport.start(); }
+            if(Tone.Transport.state === "started") {
+                Tone.Transport.pause();
+                document.getElementById('play-btn').innerText = "▶";
+            } else if(player.buffer.loaded) {
+                Tone.Transport.start();
+                document.getElementById('play-btn').innerText = "⏸";
+            }
         };
 
-        document.getElementById('p-slide').oninput = (e) => { shift.pitch = e.target.value; document.getElementById('p-val').innerText = e.target.value; };
-        
-        function logout() { sb.auth.signOut(); location.reload(); }
-        setInterval(() => { document.getElementById('seek-slide').value = Tone.Transport.seconds; }, 500);
+        document.getElementById('p-slide').oninput = (e) => {
+            shift.pitch = e.target.value;
+            document.getElementById('p-val').innerText = e.target.value;
+        };
+
+        document.getElementById('seek-slide').oninput = (e) => {
+            Tone.Transport.seconds = parseFloat(e.target.value);
+            player.seek(Tone.Transport.seconds);
+        };
+
+        setInterval(() => {
+            if(Tone.Transport.state === "started") {
+                document.getElementById('seek-slide').value = Tone.Transport.seconds;
+            }
+        }, 500);
+
         check();
     </script>
 </body>
