@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v21.6</title>
+    <title>GIGMASTER PRO | v21.7</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -17,13 +17,12 @@
 
         header { height: 60px; padding: 0 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); z-index: 500; }
         .u-badge { background: var(--border); padding: 6px 15px; border-radius: 20px; font-size: 11px; cursor: pointer; position: relative; }
-        .drop-menu { position: absolute; top: 50px; right: 0; background: var(--surface); border: 1px solid var(--border); display: none; width: 190px; border-radius: 8px; box-shadow: 0 10px 30px #000; z-index: 600; }
-        .drop-menu div { padding: 12px 15px; border-bottom: 1px solid var(--border); font-size: 11px; cursor: pointer; transition: 0.2s; }
+        .drop-menu { position: absolute; top: 50px; right: 0; background: var(--surface); border: 1px solid var(--border); display: none; width: 195px; border-radius: 8px; box-shadow: 0 10px 30px #000; z-index: 600; }
+        .drop-menu div { padding: 12px 15px; border-bottom: 1px solid var(--border); font-size: 11px; cursor: pointer; }
         .drop-menu div:hover { background: var(--green); color: #000; }
 
         #auth-screen { position: fixed; inset: 0; background: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .auth-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); padding: 40px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.08); text-align: center; width: 100%; max-width: 380px; }
-        .auth-card h2 { font-weight: 200; letter-spacing: 8px; margin-bottom: 30px; color: var(--green); }
         .auth-card input { width: 100%; padding: 14px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); color: #fff; }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); }
@@ -33,9 +32,10 @@
         .main-container { display: flex; flex: 1; overflow: hidden; }
         .sidebar { width: 280px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
         .main-content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 180px; }
+        
         .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: rgba(255,255,255,0.03); cursor: pointer; font-size: 11px; }
-        .pl-actions { display: flex; gap: 10px; }
-        .pl-actions svg { opacity: 0.4; transition: 0.2s; }
+        .pl-actions { display: flex; gap: 8px; }
+        .pl-actions svg { opacity: 0.4; transition: 0.2s; cursor: pointer; }
         .pl-actions svg:hover { opacity: 1; fill: var(--green); }
 
         .song-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
@@ -51,9 +51,8 @@
 
     <div id="modal-bug" class="modal-overlay">
         <div class="modal-box">
-            <h3 style="margin:0 0 10px 0; font-weight:400">RELATAR PROBLEMA</h3>
-            <p style="font-size:11px; color:var(--sub); margin-bottom:15px;">Descreva o erro encontrado para que possamos ajudá-lo:</p>
-            <textarea id="bug-desc" rows="4" placeholder="Ex: O áudio está falhando..."></textarea>
+            <h3 style="margin:0 0 10px 0; font-weight:400">RELATAR UM PROBLEMA</h3>
+            <textarea id="bug-desc" rows="4" placeholder="Descreva o erro encontrado..."></textarea>
             <div style="display:flex; gap:10px;">
                 <button class="btn-slim" onclick="closeM('modal-bug')" style="border-color:var(--sub); color:var(--sub); flex:1;">CANCELAR</button>
                 <button class="btn-slim btn-fill" onclick="submitBug()" style="flex:1;">ENVIAR</button>
@@ -72,21 +71,13 @@
         </div>
     </div>
 
-    <div id="modal-pix" class="modal-overlay" onclick="this.style.display='none'">
-        <div class="modal-box" onclick="event.stopPropagation()">
-            <h3 style="margin:0">APOIAR GIGMASTER</h3>
-            <img src="pix.jpg" style="width:100%; border-radius:12px; margin:20px 0;">
-            <button class="btn-slim" style="width:100%" onclick="document.getElementById('modal-pix').style.display='none'">FECHAR</button>
-        </div>
-    </div>
-
     <div id="auth-screen">
         <div class="auth-card">
-            <h2>GIGMASTER</h2>
-            <input type="email" id="login-email" placeholder="E-mail">
-            <input type="password" id="login-pass" placeholder="Senha">
-            <button class="btn-slim btn-fill" onclick="handleAuth('in')" style="width:100%; height:50px; margin-bottom:12px;">ENTRAR</button>
-            <button class="btn-slim" onclick="handleAuth('up')" style="width:100%; border-color:#444; color:var(--sub); margin-bottom:25px;">CRIAR CONTA</button>
+            <h2 style="font-weight:200; letter-spacing:8px; margin-bottom:30px; color:var(--green);">GIGMASTER</h2>
+            <input type="email" id="f-email" placeholder="E-mail" autocomplete="email">
+            <input type="password" id="f-pass" placeholder="Senha" autocomplete="current-password">
+            <button class="btn-slim btn-fill" onclick="doAuth('in')" style="width:100%; height:50px; margin-bottom:12px;">ENTRAR</button>
+            <button class="btn-slim" onclick="doAuth('up')" style="width:100%; border-color:#444; color:var(--sub); margin-bottom:25px;">CRIAR CONTA</button>
             <div style="display:flex; align-items:center; margin-bottom:25px;">
                 <hr style="flex:1; border:0; border-top:1px solid var(--border)"><span style="padding:0 15px; font-size:10px; color:var(--sub)">OU ACESSE COM</span><hr style="flex:1; border:0; border-top:1px solid var(--border)">
             </div>
@@ -105,23 +96,23 @@
                     <div onclick="toggleT()">🌓 ALTERAR TEMA</div>
                     <div onclick="uiRenameNick()">👤 MUDAR NICKNAME</div>
                     <div onclick="openM('modal-bug')" style="color:var(--green)">🐞 RELATAR BUG</div>
-                    <div onclick="openM('modal-pix')">💎 APOIAR PIX</div>
                     <div onclick="logout()" style="color:#ff4d4d">🚪 SAIR</div>
                 </div>
             </div>
         </header>
 
         <div class="main-container">
-            <div class="sidebar">
+            <div class="sidebar" id="sidebar">
                 <button class="btn-slim" style="width:100%" onclick="uiAddFolder()">+ NOVA PASTA</button>
                 <div id="pl-list" style="margin-top:20px;"></div>
             </div>
             <div class="main-content">
                 <div style="display:flex; flex-direction:column; gap:15px; margin-bottom:25px;">
                     <h2 id="pl-title" style="margin:0; font-weight:200; font-size:1.8rem;">Biblioteca</h2>
-                    <div style="display:flex; gap:10px;">
+                    <div style="display:flex; gap:10px;" id="action-bar">
                         <label class="btn-slim" id="btn-up" style="display:none; flex:1; text-align:center;">+ MP3 <input type="file" id="up-file" hidden></label>
                         <button id="btn-zip" class="btn-slim" style="display:none; flex:1; border-color:#444; color:#888" onclick="dlZip()">ZIP</button>
+                        <button id="btn-back" class="btn-slim" style="display:none; flex:1;" onclick="location.href=location.pathname">VOLTAR</button>
                     </div>
                 </div>
                 <div id="song-list"></div>
@@ -136,7 +127,7 @@
                     <div style="display:flex; align-items:center; gap:8px;">
                         <input type="range" id="p-slide" min="-7" max="7" value="0" style="width:50px">
                         <b id="p-val" style="font-size:12px; width:15px;">0</b>
-                        <svg onclick="saveP()" viewBox="0 0 24 24" width="16" fill="var(--green)" style="cursor:pointer;"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                        <svg id="save-p" onclick="saveP()" viewBox="0 0 24 24" width="16" fill="var(--green)" style="cursor:pointer;"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
                     </div>
                     <button id="play-btn" style="width:50px; height:50px; border-radius:50%; background:#fff; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                         <svg id="svg-play" viewBox="0 0 24 24" width="22"><path fill="#000" d="M8 5v14l11-7z"/></svg>
@@ -160,8 +151,9 @@
         player.connect(shift);
         shift.toDestination();
 
-        let curPl = null, curSId = null, allS = [];
+        let curPl = null, curSId = null, allS = [], isSharedMode = false;
 
+        // --- SISTEMA DE MODAL ---
         function showModal({title, text, input, onConfirm}) {
             const overlay = document.getElementById('master-modal');
             const inField = document.getElementById('mm-input');
@@ -172,9 +164,11 @@
             document.getElementById('mm-cancel').onclick = () => overlay.style.display = 'none';
         }
 
-        async function handleAuth(type) {
-            const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-pass').value;
+        // --- AUTH & REDIRECT FIX ---
+        async function doAuth(type) {
+            const email = document.getElementById('f-email').value;
+            const pass = document.getElementById('f-pass').value;
+            if(!email || !pass) { alert("Preencha todos os campos."); return; }
             const { error } = type === 'in' ? await sb.auth.signInWithPassword({ email, password:pass }) : await sb.auth.signUp({ email, password:pass });
             if(error) alert(error.message); else checkSession();
         }
@@ -184,24 +178,36 @@
         }
 
         async function checkSession() {
-            const { data: { session } } = await sb.auth.getSession();
-            if(session) {
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('app').style.display = 'flex';
-                const { data: profile } = await sb.from('profiles').select('username').eq('id', session.user.id).single();
-                document.getElementById('u-display').innerText = (profile?.username || session.user.email.split('@')[0]).toUpperCase();
-                loadPl();
+            const params = new URLSearchParams(window.location.search);
+            const shareId = params.get('share');
+            if (shareId) {
+                isSharedMode = true; document.getElementById('auth-screen').style.display = 'none'; document.getElementById('app').style.display = 'flex'; document.getElementById('sidebar').style.display = 'none'; document.getElementById('btn-back').style.display = 'block'; document.getElementById('save-p').style.display = 'none';
+                const { data } = await sb.from('playlists').select('nome').eq('id', shareId).single();
+                if(data) selPl(shareId, data.nome);
+            } else {
+                const { data: { session } } = await sb.auth.getSession();
+                if(session) {
+                    document.getElementById('auth-screen').style.display = 'none'; document.getElementById('app').style.display = 'flex';
+                    const { data: profile } = await sb.from('profiles').select('username').eq('id', session.user.id).single();
+                    document.getElementById('u-display').innerText = (profile?.username || session.user.email.split('@')[0]).toUpperCase();
+                    loadPl();
+                } else { document.getElementById('app').style.display = 'none'; document.getElementById('auth-screen').style.display = 'flex'; }
             }
         }
 
         async function logout() { await sb.auth.signOut(); location.reload(); }
 
+        // --- GESTÃO RESTAURADA (🐞 & 🔗) ---
         async function submitBug() {
-            const desc = document.getElementById('bug-desc').value;
-            if(!desc) return;
+            const desc = document.getElementById('bug-desc').value; if(!desc) return;
             const { data: { user } } = await sb.auth.getUser();
             await sb.from('bugs').insert({ user_id: user.id, description: desc, user_email: user.email });
-            alert("Obrigado pelo feedback!"); closeM('modal-bug');
+            alert("Feedback enviado!"); closeM('modal-bug');
+        }
+
+        function copyLink(id) {
+            const url = `${window.location.origin}${window.location.pathname}?share=${id}`;
+            navigator.clipboard.writeText(url).then(() => alert("Link da playlist copiado!"));
         }
 
         async function loadPl() {
@@ -209,45 +215,41 @@
             const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
             document.getElementById('pl-list').innerHTML = data.map(p => `
                 <div class="pl-item" onclick="selPl(${p.id},'${p.nome}')">
-                    <span>📂 ${p.nome.toUpperCase()}</span>
+                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;">📂 ${p.nome.toUpperCase()}</span>
                     <div class="pl-actions">
-                        <svg onclick="event.stopPropagation(); uiRenFold(${p.id},'${p.nome}')" viewBox="0 0 24 24" width="14" fill="#666"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                        <svg onclick="event.stopPropagation(); uiDelFold(${p.id},'${p.nome}')" viewBox="0 0 24 24" width="14" fill="#666"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        <svg onclick="event.stopPropagation(); copyLink(${p.id})" viewBox="0 0 24 24" width="14" fill="#666"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+                        <svg onclick="event.stopPropagation(); uiRenameFolder(${p.id}, '${p.nome}')" viewBox="0 0 24 24" width="14" fill="#666"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        <svg onclick="event.stopPropagation(); uiDelFolder(${p.id},'${p.nome}')" viewBox="0 0 24 24" width="14" fill="#666"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                     </div>
                 </div>`).join('');
         }
 
-        function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; document.getElementById('btn-up').style.display='block'; document.getElementById('btn-zip').style.display='block'; loadSongs(); }
-
+        // --- PLAYER & SONG MANAGEMENT (MANTIDOS) ---
+        function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; if(!isSharedMode) { document.getElementById('btn-up').style.display = 'block'; document.getElementById('btn-zip').style.display = 'block'; } loadSongs(); }
         async function loadSongs() {
             const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl).order('titulo'); allS = data;
-            document.getElementById('song-list').innerHTML = data.map(s => `<div class="song-row ${curSId === s.id ? 'active' : ''}" onclick="playS('${s.audio_url}', ${s.pitch}, '${s.titulo}', ${s.id})"><div style="flex:1"><b>${s.titulo}</b> <small style="margin-left:8px; opacity:0.5">${s.pitch} ST</small></div><div style="display:flex; gap:15px; align-items:center"><svg onclick="event.stopPropagation(); dlMod('${s.audio_url}', ${s.pitch}, '${s.titulo}')" viewBox="0 0 24 24" width="16" fill="currentColor" style="opacity:0.4"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg><span onclick="event.stopPropagation(); uiDelSong(${s.id},'${s.titulo}')" style="opacity:0.3">✕</span></div></div>`).join('');
+            document.getElementById('song-list').innerHTML = data.map(s => `<div class="song-row ${curSId === s.id ? 'active' : ''}" onclick="playS('${s.audio_url}', ${s.pitch}, '${s.titulo}', ${s.id})"><div style="flex:1"><b>${s.titulo}</b> <small style="margin-left:8px; opacity:0.5">${s.pitch} ST</small></div><div style="display:flex; gap:15px; align-items:center"><svg onclick="event.stopPropagation(); dlMod('${s.audio_url}', ${s.pitch}, '${s.titulo}')" viewBox="0 0 24 24" width="16" fill="currentColor" style="opacity:0.4"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>${!isSharedMode ? `<span onclick="event.stopPropagation(); uiDelSong(${s.id}, '${s.titulo}')" style="opacity:0.3">✕</span>` : ''}</div></div>`).join('');
         }
+        async function playS(url, p, tit, id) { await Tone.start(); curSId = id; document.getElementById('cur-track').innerText = "SINCRONIZANDO..."; player.stop(); player.unsync(); Tone.Transport.stop(); Tone.Transport.cancel(); await player.load(url); shift.pitch = p; document.getElementById('p-val').innerText = p; document.getElementById('p-slide').value = p; document.getElementById('seek').max = player.buffer.duration; document.getElementById('cur-track').innerText = tit; player.sync().start(0); Tone.Transport.start(); document.getElementById('svg-play').innerHTML = '<path fill="#000" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; loadSongs(); }
+        async function saveP() { if(curSId && !isSharedMode) { await sb.from('musicas').update({pitch: parseInt(document.getElementById('p-slide').value)}).eq('id', curSId); loadSongs(); } }
 
-        async function playS(url, p, tit, id) {
-            await Tone.start(); curSId = id; document.getElementById('cur-track').innerText = "SINCRONIZANDO...";
-            player.stop(); player.unsync(); Tone.Transport.stop(); Tone.Transport.cancel(); await player.load(url);
-            shift.pitch = p; document.getElementById('p-val').innerText = p; document.getElementById('p-slide').value = p;
-            document.getElementById('seek').max = player.buffer.duration; document.getElementById('cur-track').innerText = tit;
-            player.sync().start(0); Tone.Transport.start(); document.getElementById('svg-play').innerHTML = '<path fill="#000" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; loadSongs();
-        }
+        // --- UI WRAPPERS ---
+        function uiAddFolder() { showModal({ title: "NOVA PASTA", text: "Nome da playlist:", input: true, onConfirm: async (n) => { if(!n) return; const { data: { user } } = await sb.auth.getUser(); await sb.from('playlists').insert({ nome: n, user_id: user.id }); loadPl(); }}); }
+        function uiRenameFolder(id, old) { showModal({ title: "RENOMEAR", text: `Novo nome para "${old}":`, input: true, onConfirm: async (n) => { if(!n || n === old) return; await sb.from('playlists').update({ nome: n }).eq('id', id); loadPl(); }}); }
+        function uiDelFolder(id, n) { showModal({ title: "EXCLUIR", text: `Apagar "${n}"?`, input: false, onConfirm: async () => { await sb.from('musicas').delete().eq('playlist_id', id); await sb.from('playlists').delete().eq('id', id); loadPl(); }}); }
+        function uiDelSong(id, n) { showModal({ title: "REMOVER", text: `Remover "${n}"?`, input: false, onConfirm: async () => { await sb.from('musicas').delete().eq('id', id); loadSongs(); }}); }
+        function uiRenameNick() { showModal({ title: "NICKNAME", text: "Novo nome:", input: true, onConfirm: async (n) => { if(!n) return; const { data: { user } } = await sb.auth.getUser(); await sb.from('profiles').upsert({ id: user.id, username: n }); document.getElementById('u-display').innerText = n.toUpperCase(); }}); }
 
-        async function saveP() { if(curSId) { await sb.from('musicas').update({pitch: parseInt(document.getElementById('p-slide').value)}).eq('id', curSId); loadSongs(); } }
+        // --- DOWNLOADS & AUDIO UTILS ---
         async function dlZip() { const zip = new JSZip(); for (let s of allS) { try { const r = await fetch(s.audio_url); const b = await r.blob(); zip.file(`${s.titulo}.mp3`, b); } catch(e){} } const c = await zip.generateAsync({type:"blob"}); saveAs(c, `playlist.zip`); }
         async function dlMod(url, p, tit) { const buf = await (await fetch(url)).arrayBuffer(); const aBuf = await Tone.getContext().rawContext.decodeAudioData(buf); const rend = await Tone.Offline(() => { const ply = new Tone.Player(aBuf).toDestination(); const sft = new Tone.PitchShift(p).toDestination(); ply.connect(sft); ply.start(0); }, aBuf.duration); saveAs(new Blob([audioBufferToWav(rend)], { type: 'audio/wav' }), `${tit}_${p}ST.wav`); }
         function audioBufferToWav(b) { let n = b.numberOfChannels, len = b.length * n * 2 + 44, bA = new ArrayBuffer(len), v = new DataView(bA), channels = [], i, s, off = 0, p = 0; function s32(d) { v.setUint32(p, d, true); p += 4; } function s16(d) { v.setUint16(p, d, true); p += 2; } s32(0x46464952); s32(len - 8); s32(0x45564157); s32(0x20746d66); s32(16); s16(1); s16(n); s32(b.sampleRate); s32(b.sampleRate * 2 * n); s16(n * 2); s16(16); s32(0x61746164); s32(len - p - 4); for(i=0; i<n; i++) channels.push(b.getChannelData(i)); while(p < len) { for(i=0; i<n; i++) { s = Math.max(-1, Math.min(1, channels[i][off])); s = (0.5 + s < 0 ? s * 32768 : s * 32767)|0; v.setInt16(p, s, true); p += 2; } off++; } return bA; }
 
-        function uiAddFolder() { showModal({title: "NOVA PASTA", input: true, onConfirm: async (n) => { if(!n) return; const {data:{user}} = await sb.auth.getUser(); await sb.from('playlists').insert({nome: n, user_id: user.id}); loadPl(); }}); }
-        function uiRenFold(id, old) { showModal({title: "RENOMEAR", input: true, onConfirm: async (n) => { if(!n || n===old) return; await sb.from('playlists').update({nome: n}).eq('id', id); loadPl(); }}); }
-        function uiDelFold(id, n) { showModal({title: "EXCLUIR", text: `Apagar "${n}"?`, onConfirm: async () => { await sb.from('musicas').delete().eq('playlist_id', id); await sb.from('playlists').delete().eq('id', id); loadPl(); }}); }
-        function uiDelSong(id, n) { showModal({title: "REMOVER", text: `Remover "${n}"?`, onConfirm: async () => { await sb.from('musicas').delete().eq('id', id); loadSongs(); }}); }
-        function uiRenameNick() { showModal({title: "NICKNAME", input: true, onConfirm: async (n) => { if(!n) return; const {data:{user}} = await sb.auth.getUser(); await sb.from('profiles').upsert({id: user.id, username: n}); document.getElementById('u-display').innerText = n.toUpperCase(); }}); }
-
+        // --- CONTROLES & UI ---
         function openM(id) { document.getElementById(id).style.display = 'flex'; }
         function closeM(id) { document.getElementById(id).style.display = 'none'; }
         function toggleD() { const d = document.getElementById('u-drop'); d.style.display = d.style.display==='block'?'none':'block'; }
         function toggleT() { document.body.classList.toggle('light-theme'); }
-
         document.getElementById('play-btn').onclick = () => { if(Tone.Transport.state === "started") { Tone.Transport.pause(); document.getElementById('svg-play').innerHTML = '<path fill="#000" d="M8 5v14l11-7z"/>'; } else { Tone.Transport.start(); document.getElementById('svg-play').innerHTML = '<path fill="#000" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; }};
         document.getElementById('v-slide').oninput = (e) => { Tone.Destination.volume.rampTo(parseFloat(e.target.value), 0.1); };
         document.getElementById('p-slide').oninput = (e) => { shift.pitch = e.target.value; document.getElementById('p-val').innerText = e.target.value; };
