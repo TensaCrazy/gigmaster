@@ -137,6 +137,7 @@ const vSlideEl = document.getElementById("v-slide");
 const playBtnEl = document.getElementById("play-btn");
 
  let offset=0, lastStart=0, dragging=false, curPl=null;
+ let currentUser = null;
  
  /* AUTH */
  async function handleAuth(type){
@@ -164,6 +165,7 @@ const playBtnEl = document.getElementById("play-btn");
      document.getElementById("app").style.display="flex";
      
      // Pegar Perfil
+    currentUser = session.user;
      const {data:prof} = await sb.from('profiles').select('username').eq('id', session.user.id).single();
      document.getElementById("u-display").innerText = (prof?.username || session.user.email.split("@")[0]).toUpperCase();
      
@@ -205,8 +207,8 @@ async function loadSharedPlaylist(id){
  /* PLAYLISTS */
 async function loadPlaylists(){
   const gu = await sb.auth.getUser();
-  const user = gu?.data?.user;
-  if(!user) return false;
+  const user = gu?.data?.user || currentUser;
+  if(!user){ console.warn('loadPlaylists: no user'); return false; }
 
   const {data, error} = await sb.from("playlists").select("*").eq("user_id", user.id).order("nome", { ascending: true });
   if(error) { console.error('loadPlaylists error', error); return false; }
@@ -233,6 +235,8 @@ async function loadPlaylists(){
         </div>
       </div>`;
   }).join("");
+  // normalize curPl to number if present so active matches correctly
+  if(curPl) curPl = Number(curPl);
   return true;
 }
 
@@ -333,14 +337,29 @@ if(vSlideEl) vSlideEl.oninput = e => Tone.Destination.volume.value = parseFloat(
  async function addPlaylist(){
    const n=prompt("Nome da pasta:"); if(!n)return;
   const {data:{user}}=await sb.auth.getUser();
-  const { data, error } = await sb.from("playlists").insert([{nome:n,user_id:user.id}]).select().single();
-  if(error){ toast('Erro ao criar pasta'); return; }
+  const uid = user?.id || currentUser?.id;
+  if(!uid){ toast('Usuário não autenticado'); return; }
+  const resp = await sb.from("playlists").insert([{nome:n,user_id:uid}]).select().single();
+  console.log('addPlaylist response:', resp);
+  const { data, error } = resp;
+  if(error){ console.error('addPlaylist error', error); toast('Erro ao criar pasta'); return; }
   await loadPlaylists();
   // select the newly created playlist
   if(data?.id) selectPlaylist(data.id, data.nome);
  }
- async function deletePlaylist(id){ if(confirm("Apagar pasta?")) { await sb.from("musicas").delete().eq("playlist_id",id); await sb.from("playlists").delete().eq("id",id); loadPlaylists(); } }
- async function deleteSong(id){ await sb.from("musicas").delete().eq("id",id); loadSongs(); }
+ async function deletePlaylist(id){
+  if(!confirm("Apagar pasta?")) return;
+  try{
+    await sb.from("musicas").delete().eq("playlist_id",id);
+    await sb.from("playlists").delete().eq("id",id);
+    if(curPl == id) { curPl = null; document.getElementById('pl-title').innerText = 'Biblioteca'; document.getElementById('btn-up').style.display='none'; }
+    await loadPlaylists();
+  }catch(e){ console.error('deletePlaylist error', e); toast('Erro ao apagar pasta'); }
+ }
+ async function deleteSong(id){
+  try{ await sb.from("musicas").delete().eq("id",id); await loadSongs(); }
+  catch(e){ console.error('deleteSong error', e); toast('Erro ao apagar música'); }
+ }
  
  async function downloadDirect(url, filename) {
      const res = await fetch(url);
