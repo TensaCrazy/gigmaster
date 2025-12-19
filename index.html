@@ -3,87 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v18.6</title>
+    <title>GIGMASTER PRO | v19.0</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
+    
     <style>
-        :root { --green: #1db954; --bg: #080808; --surface: #111111; --border: rgba(255,255,255,0.08); --text: #d1d1d1; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; -webkit-font-smoothing: antialiased; }
+        :root { 
+            --green: #1db954; --bg: #080808; --surface: #111; --border: rgba(255,255,255,0.08); --text: #d1d1d1; --red: #ff4d4d;
+        }
+        /* Tema Claro */
+        body.light-theme {
+            --bg: #f5f5f5; --surface: #fff; --border: rgba(0,0,0,0.1); --text: #222;
+        }
 
-        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
-        .logo-thin { font-weight: 200; font-size: 2.5rem; letter-spacing: 4px; color: #fff; }
-        .logo-thin span { font-weight: 600; color: var(--green); }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; transition: 0.3s; }
+
+        /* Login */
+        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 15px; }
         
-        input { background: transparent; border: none; border-bottom: 1px solid var(--border); color: #fff; padding: 10px; width: 260px; outline: none; transition: 0.3s; font-weight: 200; }
-        input:focus { border-bottom-color: var(--green); }
-        .btn-slim { background: transparent; border: 1px solid var(--green); color: var(--green); padding: 10px 30px; border-radius: 2px; cursor: pointer; font-size: 11px; letter-spacing: 2px; transition: 0.3s; }
-        .btn-slim:hover { background: var(--green); color: #000; }
+        /* Menu Usuário */
+        .user-menu { position: relative; cursor: pointer; }
+        .dropdown { position: absolute; top: 100%; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; display: none; width: 180px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .dropdown div { padding: 12px; font-size: 11px; letter-spacing: 1px; border-bottom: 1px solid var(--border); }
+        .dropdown div:hover { background: var(--green); color: #000; }
 
-        #app { display: none; flex: 1; flex-direction: column; height: 100vh; }
-        header { padding: 15px 40px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        /* Modal Pix */
+        #pix-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; align-items:center; justify-content:center; }
+        .modal-content { background:var(--surface); padding:30px; border-radius:8px; text-align:center; max-width:300px; }
+        .modal-content img { width: 100%; border-radius: 4px; margin: 15px 0; }
 
+        /* Estilo Geral */
         .main-container { display: flex; flex: 1; overflow: hidden; }
         .sidebar { width: 240px; border-right: 1px solid var(--border); padding: 30px; background: var(--bg); }
         .main-content { flex: 1; padding: 40px; overflow-y: auto; padding-bottom: 140px; }
 
-        .pl-item { padding: 8px 0; font-size: 13px; color: #666; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; border-bottom: 1px solid transparent; }
-        .pl-item:hover { color: #fff; }
-        .pl-item.active { color: var(--green); border-bottom: 1px solid rgba(29, 185, 84, 0.3); }
-
-        .song-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border); transition: 0.3s; }
-        .song-row:hover { color: #fff; border-bottom-color: #333; }
+        .song-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
         .song-row.active { color: var(--green); }
-        .song-info { cursor: pointer; flex: 1; font-weight: 200; font-size: 15px; display: flex; align-items: center; }
-        .song-info b { font-weight: 400; }
         
-        /* Indicativo de Pitch Slim */
-        .pitch-badge { font-size: 10px; margin-left: 12px; padding: 2px 6px; border: 0.5px solid rgba(255,255,255,0.2); border-radius: 3px; color: #888; font-family: monospace; letter-spacing: 1px; }
-        .song-row.active .pitch-badge { border-color: var(--green); color: var(--green); }
-
-        footer { background: #0a0a0a; border-top: 1px solid var(--border); padding: 20px 50px; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
-        .player-grid { display: grid; grid-template-columns: 1fr 2fr 1fr; align-items: center; max-width: 1400px; margin: 0 auto; gap: 40px; }
-
-        .play-circle { width: 45px; height: 45px; border: 1px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; background: transparent; }
-        .play-circle:hover { background: #fff; }
-        .play-circle:hover svg { fill: #000; }
-        .play-circle svg { fill: #fff; width: 18px; transition: 0.3s; }
-
-        input[type="range"] { -webkit-appearance: none; background: transparent; cursor: pointer; width: 100%; }
-        input[type="range"]::-webkit-slider-runnable-track { background: #222; height: 1px; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: var(--green); margin-top: -4.5px; border: 1px solid #000; }
-
-        .icon-small { fill: #444; transition: 0.2s; cursor: pointer; }
-        .icon-small:hover { fill: var(--red); }
-        .save-icon:hover { fill: var(--green); }
+        .btn-slim { background: transparent; border: 1px solid var(--green); color: var(--green); padding: 8px 20px; border-radius: 2px; cursor: pointer; font-size: 10px; letter-spacing: 1px; }
+        .play-circle { width: 45px; height: 45px; border: 1px solid var(--text); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; background:none; }
+        
+        input[type="range"] { -webkit-appearance: none; background: #333; height: 1px; outline:none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: var(--green); }
+        
+        .icon-small { fill: currentColor; cursor: pointer; opacity: 0.6; transition: 0.2s; }
+        .icon-small:hover { opacity: 1; }
     </style>
 </head>
-<body>
+<body class="dark-theme">
 
     <div id="auth-screen">
-        <div class="logo-thin">GIG<span>MASTER</span></div>
+        <div style="font-weight:200; font-size:2rem; letter-spacing:4px;">GIG<span>MASTER</span></div>
         <input type="email" id="email" placeholder="Email">
         <input type="password" id="pass" placeholder="Senha">
-        <button class="btn-slim" onclick="login()">ENTER STATION</button>
-        <p id="msg"></p>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-slim" onclick="login('in')">ENTRAR</button>
+            <button class="btn-slim" style="border-color:#555; color:#aaa" onclick="login('up')">CRIAR CONTA</button>
+        </div>
+        <p id="msg" style="font-size:10px; color:var(--green)"></p>
     </div>
 
-    <div id="app">
+    <div id="pix-modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div style="font-size:12px; letter-spacing:2px;">APOIE O PROJETO</div>
+            <img src="pix.jpg" alt="QR Code Pix">
+            <button class="btn-slim" onclick="document.getElementById('pix-modal').style.display='none'">FECHAR</button>
+        </div>
+    </div>
+
+    <div id="app" style="display:none; flex-direction:column; height:100vh;">
         <header>
-            <div style="font-weight: 200; letter-spacing: 2px; font-size: 14px;">GIGMASTER <span style="font-weight: 600; color: var(--green);">PRO</span></div>
-            <button class="btn-slim" style="padding: 5px 15px; font-size: 9px;" onclick="logout()">LOGOUT</button>
+            <div style="font-weight:200; font-size:14px; letter-spacing:2px;">GIGMASTER <span style="font-weight:600; color:var(--green)">PRO</span></div>
+            <div class="user-menu" onclick="toggleDropdown()">
+                <span id="user-email" style="font-size:11px; opacity:0.7">PERFIL ▼</span>
+                <div class="dropdown" id="user-dropdown">
+                    <div onclick="toggleTheme()">🌓 ALTERAR TEMA</div>
+                    <div onclick="document.getElementById('pix-modal').style.display='flex'">💎 FAZER DOAÇÃO</div>
+                    <div onclick="logout()" style="color:var(--red)">🚪 SAIR</div>
+                </div>
+            </div>
         </header>
 
         <div class="main-container">
             <div class="sidebar">
-                <div style="font-size: 10px; color: #444; letter-spacing: 2px; margin-bottom: 20px;">PLAYLISTS</div>
+                <div style="font-size:10px; color:#666; letter-spacing:2px; margin-bottom:20px;">BIBLIOTECA</div>
                 <div id="pl-list"></div>
-                <button onclick="addPl()" style="background:none; border:none; color:var(--green); font-size: 11px; cursor:pointer; margin-top:20px; padding:0;">+ NEW FOLDER</button>
+                <button onclick="addPl()" style="background:none; border:none; color:var(--green); font-size:10px; cursor:pointer; margin-top:20px;">+ NOVA PASTA</button>
             </div>
             
             <div class="main-content">
                 <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:40px;">
-                    <h1 id="pl-title" style="font-weight: 200; font-size: 2.5rem; margin:0; letter-spacing: -1px;">Select Folder</h1>
+                    <div>
+                        <h1 id="pl-title" style="font-weight:200; margin:0">Selecione uma Pasta</h1>
+                        <button id="btn-zip" class="btn-slim" style="display:none; margin-top:10px; border-color:#555; color:#888" onclick="downloadZip()">BAIXAR PLAYLIST (.ZIP)</button>
+                    </div>
                     <label class="btn-slim" id="btn-up" style="display:none;">UPLOAD MP3 <input type="file" id="up-mp3" hidden></label>
                 </div>
                 <div id="song-list"></div>
@@ -91,30 +109,30 @@
         </div>
 
         <footer>
-            <div class="player-grid">
+            <div style="display: grid; grid-template-columns: 1fr 2fr 1fr; align-items: center; max-width: 1400px; margin: 0 auto; width: 100%;">
                 <div style="display:flex; align-items:center; gap:15px;">
                     <div>
-                        <div style="font-size:9px; color:#444; letter-spacing:1px; margin-bottom:4px;">PITCH</div>
-                        <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="font-size:8px; color:#666; margin-bottom:4px;">PITCH</div>
+                        <div style="display:flex; align-items:center; gap:8px;">
                             <input type="range" id="p-slide" min="-7" max="7" value="0" style="width:60px">
-                            <span id="p-val" style="font-size:12px; font-weight:600; color:var(--green); width:20px;">0</span>
-                            <svg onclick="savePitch()" class="icon-small save-icon" viewBox="0 0 24 24" width="14"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            <b id="p-val" style="font-size:12px; color:var(--green); width:15px;">0</b>
+                            <svg onclick="savePitch()" class="icon-small" viewBox="0 0 24 24" width="14"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                         </div>
                     </div>
                 </div>
 
                 <div style="display:flex; align-items:center; gap:30px;">
                     <button id="play-btn" class="play-circle">
-                        <svg id="svg-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <svg id="svg-play" viewBox="0 0 24 24" width="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                     </button>
-                    <div style="flex:1;">
-                        <div id="now-playing" style="font-size:10px; color:#555; letter-spacing:1px; margin-bottom:8px; text-transform:uppercase; text-align:center;">Station Standby</div>
-                        <input type="range" id="seek-slide" value="0" step="0.1">
+                    <div style="flex:1; text-align:center;">
+                        <div id="now-playing" style="font-size:9px; color:#666; margin-bottom:8px; text-transform:uppercase;">Station Off</div>
+                        <input type="range" id="seek-slide" value="0" step="0.1" style="width:100%">
                     </div>
                 </div>
 
                 <div style="display:flex; align-items:center; justify-content:flex-end; gap:15px;">
-                    <svg viewBox="0 0 24 24" width="14" fill="#333"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                    <svg viewBox="0 0 24 24" width="14" fill="#666"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
                     <input type="range" id="v-slide" min="-40" max="6" value="0" style="width:80px">
                 </div>
             </div>
@@ -130,104 +148,149 @@
         const shift = new Tone.PitchShift().toDestination();
         player.connect(shift);
 
-        let curPl = null, curSongId = null;
+        let curPl = null, curSongId = null, allSongs = [];
 
-        async function login() {
+        // --- AUTH ---
+        async function login(type) {
             const email = document.getElementById('email').value, password = document.getElementById('pass').value;
-            const { error } = await sb.auth.signInWithPassword({ email, password });
-            if(error) { await sb.auth.signUp({ email, password }); document.getElementById('msg').innerText = "Account created. Login now."; } 
-            else { check(); }
+            const { data, error } = type === 'in' 
+                ? await sb.auth.signInWithPassword({ email, password })
+                : await sb.auth.signUp({ email, password });
+            
+            if(error) alert(error.message);
+            else if(type === 'up') document.getElementById('msg').innerText = "Conta criada! Faça login.";
+            else check();
         }
+
         async function check() {
             const { data: { session } } = await sb.auth.getSession();
-            if(session) { document.getElementById('auth-screen').style.display = 'none'; document.getElementById('app').style.display = 'flex'; loadPl(); }
+            if(session) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                document.getElementById('user-email').innerText = session.user.email.split('@')[0].toUpperCase() + ' ▼';
+                loadPl();
+            }
         }
+
         function logout() { sb.auth.signOut(); location.reload(); }
 
+        // --- MENU & TEMA ---
+        function toggleDropdown() { 
+            const d = document.getElementById('user-dropdown');
+            d.style.display = d.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+        }
+
+        // --- PLAYLISTS & ZIP ---
         async function loadPl() {
             const { data: { user } } = await sb.auth.getUser();
             const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
             document.getElementById('pl-list').innerHTML = data.map(p => `
-                <div class="pl-item ${curPl==p.id?'active':''}" onclick="selPl(${p.id},'${p.nome}')">
+                <div class="pl-item ${curPl==p.id?'active':''}" onclick="selPl(${p.id},'${p.nome}')" style="display:flex; justify-content:space-between; padding:8px 0; cursor:pointer; font-size:12px">
                     <span>${p.nome.toUpperCase()}</span>
-                    <svg onclick="event.stopPropagation(); delPl(${p.id},'${p.nome}')" class="icon-small" viewBox="0 0 24 24" width="12"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    <span onclick="event.stopPropagation(); delPl(${p.id})">✕</span>
                 </div>`).join('');
         }
 
-        async function addPl() {
-            const n = prompt("FOLDER NAME:"); if(!n) return;
-            const { data: { user } } = await sb.auth.getUser();
-            await sb.from('playlists').insert({ nome: n, user_id: user.id }); loadPl();
+        async function downloadZip() {
+            const btn = document.getElementById('btn-zip');
+            btn.innerText = "PREPARANDO ZIP...";
+            const zip = new JSZip();
+            
+            for (let s of allSongs) {
+                const resp = await fetch(s.audio_url);
+                const blob = await resp.blob();
+                zip.file(`${s.titulo}.mp3`, blob);
+            }
+            
+            const content = await zip.generateAsync({type:"blob"});
+            saveAs(content, `playlist_${document.getElementById('pl-title').innerText}.zip`);
+            btn.innerText = "BAIXAR PLAYLIST (.ZIP)";
         }
 
-        async function delPl(id, n) { if(confirm(`DELETE ${n}?`)) { await sb.from('musicas').delete().eq('playlist_id', id); await sb.from('playlists').delete().eq('id', id); loadPl(); } }
-
-        function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; document.getElementById('btn-up').style.display = 'block'; loadSongs(); loadPl(); }
+        // --- MÚSICAS & DOWNLOAD INDIVIDUAL ---
+        async function selPl(id, n) { 
+            curPl = id; 
+            document.getElementById('pl-title').innerText = n;
+            document.getElementById('btn-up').style.display = 'block';
+            document.getElementById('btn-zip').style.display = 'block';
+            loadSongs(); 
+        }
 
         async function loadSongs() {
             const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl).order('titulo');
-            document.getElementById('song-list').innerHTML = data.map(s => {
-                const pitchText = s.pitch === 0 ? 'ORIG' : (s.pitch > 0 ? `+${s.pitch} ST` : `${s.pitch} ST`);
-                return `
+            allSongs = data;
+            document.getElementById('song-list').innerHTML = data.map(s => `
                 <div class="song-row ${curSongId === s.id ? 'active' : ''}">
-                    <div class="song-info" onclick="playSong('${s.audio_url}', ${s.pitch}, '${s.titulo.replace(/'/g, "\\'")}', ${s.id})">
-                        <b>${s.titulo}</b>
-                        <span class="pitch-badge">${pitchText}</span>
+                    <div onclick="playSong('${s.audio_url}', ${s.pitch}, '${s.titulo}', ${s.id})" style="flex:1; cursor:pointer">
+                        <span style="font-size:14px">${s.titulo}</span>
+                        <small style="margin-left:10px; opacity:0.5; font-size:10px">${s.pitch} ST</small>
                     </div>
-                    <svg onclick="delSong(${s.id}, '${s.titulo}')" class="icon-small" viewBox="0 0 24 24" width="14"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                </div>`;
-            }).join('');
+                    <div style="display:flex; gap:15px; align-items:center">
+                        <svg onclick="downloadModified('${s.audio_url}', ${s.pitch}, '${s.titulo}')" class="icon-small" viewBox="0 0 24 24" width="16"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        <span onclick="delSong(${s.id})" style="cursor:pointer; opacity:0.5">✕</span>
+                    </div>
+                </div>`).join('');
         }
 
+        async function downloadModified(url, pitch, titulo) {
+            alert("Processando áudio com Pitch... Aguarde.");
+            const buffer = await (await fetch(url)).arrayBuffer();
+            const audioBuffer = await Tone.getContext().rawContext.decodeAudioData(buffer);
+            
+            // Offline Render para aplicar o Pitch Shift no arquivo
+            const rendered = await Tone.Offline(() => {
+                const p = new Tone.Player(audioBuffer).toDestination();
+                const s = new Tone.PitchShift(pitch).toDestination();
+                p.connect(s);
+                p.start(0);
+            }, audioBuffer.duration);
+
+            const wav = audioBufferToWav(rendered);
+            const blob = new Blob([wav], { type: 'audio/wav' });
+            saveAs(blob, `${titulo}_pitch_${pitch}.wav`);
+        }
+
+        // Auxiliar para converter AudioBuffer em WAV
+        function audioBufferToWav(buffer) {
+            let numOfChan = buffer.numberOfChannels, length = buffer.length * numOfChan * 2 + 44, bufferArr = new ArrayBuffer(length), view = new DataView(bufferArr), channels = [], i, sample, offset = 0, pos = 0;
+            function setUint32(d) { view.setUint32(pos, d, true); pos += 4; }
+            function setUint16(d) { view.setUint16(pos, d, true); pos += 2; }
+            setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157); setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan); setUint32(buffer.sampleRate); setUint32(buffer.sampleRate * 2 * numOfChan); setUint16(numOfChan * 2); setUint16(16); setUint32(0x61746164); setUint32(length - pos - 4);
+            for(i=0; i<buffer.numberOfChannels; i++) channels.push(buffer.getChannelData(i));
+            while(pos < length) { for(i=0; i<numOfChan; i++) { sample = Math.max(-1, Math.min(1, channels[i][offset])); sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0; view.setInt16(pos, sample, true); pos += 2; } offset++; }
+            return bufferArr;
+        }
+
+        // --- PLAYER CONTROLS (Mantidos) ---
         async function playSong(url, pitch, titulo, id) {
-            try {
-                curSongId = id; document.getElementById('now-playing').innerText = "FETCHING...";
-                player.stop(); player.unsync(); Tone.Transport.stop();
-                await player.load(url);
-                shift.pitch = pitch;
-                document.getElementById('p-val').innerText = pitch;
-                document.getElementById('p-slide').value = pitch;
-                document.getElementById('seek-slide').max = player.buffer.duration;
-                document.getElementById('now-playing').innerText = titulo;
-                player.sync().start(0); loadSongs();
-                // Update play button icon to pause since it starts automatically
-                document.getElementById('svg-play').innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-                Tone.Transport.start();
-            } catch (e) { console.error(e); }
-        }
-
-        async function savePitch() {
-            if(!curSongId) return;
-            const val = parseInt(document.getElementById('p-slide').value);
-            const { error } = await sb.from('musicas').update({ pitch: val }).eq('id', curSongId);
-            if(!error) loadSongs();
-        }
-
-        document.getElementById('play-btn').onclick = async () => {
-            await Tone.start();
-            if(Tone.Transport.state === "started") {
-                Tone.Transport.pause();
-                document.getElementById('svg-play').innerHTML = '<path d="M8 5v14l11-7z"/>';
-            } else if(player.buffer.loaded) {
-                Tone.Transport.start();
-                document.getElementById('svg-play').innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-            }
-        };
-
-        document.getElementById('v-slide').oninput = (e) => { Tone.Destination.volume.value = parseFloat(e.target.value); };
-        document.getElementById('p-slide').oninput = (e) => { shift.pitch = parseFloat(e.target.value); document.getElementById('p-val').innerText = e.target.value; };
-        document.getElementById('seek-slide').oninput = (e) => { Tone.Transport.seconds = parseFloat(e.target.value); player.seek(Tone.Transport.seconds); };
-        setInterval(() => { if(Tone.Transport.state === "started") document.getElementById('seek-slide').value = Tone.Transport.seconds; }, 500);
-
-        document.getElementById('up-mp3').onchange = async (e) => {
-            const file = e.target.files[0];
-            const cleanName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
-            const path = `audios/${Date.now()}_${cleanName}`;
-            await sb.storage.from('audios').upload(path, file);
-            const { data: { publicUrl } } = sb.storage.from('audios').getPublicUrl(path);
-            await sb.from('musicas').insert({ titulo: file.name, audio_url: publicUrl, playlist_id: curPl, pitch: 0 });
+            curSongId = id; document.getElementById('now-playing').innerText = "LOADING...";
+            player.stop(); player.unsync(); Tone.Transport.stop();
+            await player.load(url);
+            shift.pitch = pitch;
+            document.getElementById('p-val').innerText = pitch;
+            document.getElementById('p-slide').value = pitch;
+            document.getElementById('seek-slide').max = player.buffer.duration;
+            document.getElementById('now-playing').innerText = titulo;
+            player.sync().start(0); Tone.Transport.start();
+            document.getElementById('svg-play').innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
             loadSongs();
+        }
+
+        document.getElementById('play-btn').onclick = () => {
+            if(Tone.Transport.state === "started") { Tone.Transport.pause(); document.getElementById('svg-play').innerHTML = '<path d="M8 5v14l11-7z"/>'; }
+            else { Tone.Transport.start(); document.getElementById('svg-play').innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; }
         };
+
+        // Outros Listeners...
+        document.getElementById('p-slide').oninput = (e) => { shift.pitch = e.target.value; document.getElementById('p-val').innerText = e.target.value; };
+        document.getElementById('v-slide').oninput = (e) => { Tone.Destination.volume.value = e.target.value; };
+        document.getElementById('seek-slide').oninput = (e) => { Tone.Transport.seconds = e.target.value; player.seek(e.target.value); };
+        setInterval(() => { if(Tone.Transport.state === "started") document.getElementById('seek-slide').value = Tone.Transport.seconds; }, 500);
 
         check();
     </script>
