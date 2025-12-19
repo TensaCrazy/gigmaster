@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GIGMASTER | CIFRAS PRO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red: #e91e63;
+            --bg: #e0e0e0;
+            --surface: #f5f5f5;
+            --border: #cccccc;
+            --text: #1a1a1a;
+            --chord: #e91e63;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* BARRA DE FERRAMENTAS */
+        .toolbar {
+            background: var(--surface);
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text);
+            transition: 0.2s;
+        }
+
+        .btn:hover { background: var(--red); color: white; border-color: var(--red); }
+        .btn-active { background: var(--red); color: white; }
+
+        /* ÁREA DA CIFRA */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #cifra-area {
+            width: 100%;
+            max-width: 800px;
+            font-family: 'Roboto Mono', monospace; /* Fonte fixa para não desalinhada */
+            white-space: pre;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            line-height: 1.5;
+            tab-size: 4;
+            color: var(--text);
+        }
+
+        .chord { color: var(--chord); font-weight: bold; }
+        .tab-line { color: #555; }
+
+        /* CONTROLES FLUTUANTES */
+        .scroll-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--surface);
+            padding: 10px;
+            border-radius: 50px;
+            border: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        #scroll-speed { width: 80px; accent-color: var(--red); }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div style="font-weight: 700; color: var(--red); margin-right: 15px;">GIGMASTER <span style="color:var(--text)">CIFRAS</span></div>
+        
+        <div style="display:flex; gap:5px; align-items:center;">
+            <span style="font-size:11px; font-weight:600">TOM:</span>
+            <button class="btn" onclick="transpose(-1)">-1</button>
+            <button class="btn" onclick="transpose(1)">+1</button>
+        </div>
+
+        <div style="display:flex; gap:5px; align-items:center;">
+            <span style="font-size:11px; font-weight:600">FONTE:</span>
+            <button class="btn" onclick="changeFont(-1)">A-</button>
+            <button class="btn" onclick="changeFont(1)">A+</button>
+        </div>
+
+        <button class="btn" onclick="toggleEdit()" id="edit-btn">MODO: VISUALIZAR</button>
+        <button class="btn btn-active" onclick="location.href='index.html'">VOLTAR AO PLAYER</button>
+    </div>
+
+    <div class="content" id="scroll-container">
+        <textarea id="cifra-area" placeholder="Cole sua cifra ou tablatura aqui...
+Exemplo:
+C          G
+Minha música favorita
+
+e|----------2---
+B|------3-------
+G|--2-----------"></textarea>
+    </div>
+
+    <div class="scroll-control">
+        <span style="font-size: 10px; font-weight: bold; align-self: center;">SCROLL</span>
+        <input type="range" id="scroll-speed" min="0" max="50" value="0">
+        <button class="btn" id="play-scroll" onclick="toggleScroll()">PLAY</button>
+    </div>
+
+    <script>
+        const cifraArea = document.getElementById('cifra-area');
+        let isEditing = true;
+        let scrollInterval;
+        let currentFontSize = 16;
+
+        // --- LÓGICA DE TRANSPOSIÇÃO ---
+        const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        
+        function transpose(semitones) {
+            let text = cifraArea.value;
+            
+            // Regex para encontrar acordes (simplificada para o exemplo)
+            const chordRegex = /\b([A-G][b#]?(m|maj|7|sus|add|dim|aug)*(\/[A-G][b#]?)?)\b/g;
+            
+            // Regex para encontrar números em tablaturas (linhas que começam com cordas)
+            const tabRegex = /^([a-gA-G]?\|-*)([0-9]+)/gm;
+
+            // Transpor Acordes
+            text = text.replace(chordRegex, (match) => {
+                return match.replace(/[A-G][b#]?/g, (note) => {
+                    let index = scale.indexOf(note.replace('b', (n) => scale[(scale.indexOf(n.charAt(0)) - 1 + 12) % 12]));
+                    if (index === -1) return note;
+                    let newIndex = (index + semitones + 12) % 12;
+                    return scale[newIndex];
+                });
+            });
+
+            // Transpor Tablatura (Números)
+            text = text.replace(/([0-9]+)/g, (number, p1, offset, string) => {
+                // Só transpõe se a linha parecer uma tablatura (contém | ou -)
+                const line = string.substring(string.lastIndexOf('\n', offset), offset);
+                if (line.includes('|') || line.includes('-')) {
+                    let newNote = parseInt(number) + semitones;
+                    return newNote >= 0 ? newNote : 0;
+                }
+                return number;
+            });
+
+            cifraArea.value = text;
+        }
+
+        // --- CONTROLES DE INTERFACE ---
+        function toggleEdit() {
+            isEditing = !isEditing;
+            cifraArea.readOnly = !isEditing;
+            document.getElementById('edit-btn').innerText = isEditing ? "MODO: EDITAR" : "MODO: VISUALIZAR";
+            cifraArea.style.border = isEditing ? "1px dashed var(--red)" : "none";
+        }
+
+        function changeFont(delta) {
+            currentFontSize += delta;
+            cifraArea.style.fontSize = currentFontSize + "px";
+        }
+
+        // --- AUTO SCROLL ---
+        function toggleScroll() {
+            const btn = document.getElementById('play-scroll');
+            if (scrollInterval) {
+                clearInterval(scrollInterval);
+                scrollInterval = null;
+                btn.innerText = "PLAY";
+            } else {
+                const speed = document.getElementById('scroll-speed').value;
+                if (speed == 0) return alert("Aumente a velocidade do scroll!");
+                btn.innerText = "STOP";
+                scrollInterval = setInterval(() => {
+                    document.getElementById('scroll-container').scrollTop += 1;
+                }, 100 - speed);
+            }
+        }
+
+        // Inicializa modo visualização
+        toggleEdit();
+    </script>
+</body>
+</html>
