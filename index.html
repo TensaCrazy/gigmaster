@@ -3,118 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v18.4</title>
+    <title>GIGMASTER PRO | v18.5</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --green: #1db954; --bg: #0b0b0b; --surface: #121212; --text: #ececec; --border: #282828; --red: #ff4d4d; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        
-        /* Auth Modernizado */
+        :root { --green: #1db954; --bg: #080808; --surface: #111111; --border: rgba(255,255,255,0.08); --text: #d1d1d1; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; -webkit-font-smoothing: antialiased; }
+
+        /* Auth Screen Minimalist */
         #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
-        .gm-logo { font-weight: 800; font-size: 2rem; letter-spacing: -2px; margin-bottom: 20px; }
-        .gm-logo span { color: var(--green); }
+        .logo-thin { font-weight: 200; font-size: 2.5rem; letter-spacing: 4px; color: #fff; }
+        .logo-thin span { font-weight: 600; color: var(--green); }
         
-        input { padding: 14px; border-radius: 4px; border: 1px solid var(--border); background: #1a1a1a; color: #fff; width: 300px; outline: none; transition: 0.3s; }
-        input:focus { border-color: var(--green); }
-        .btn { padding: 12px 24px; border-radius: 4px; border: none; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
-        .btn-green { background: var(--green); color: #000; }
-        .btn-green:hover { filter: brightness(1.2); }
-        .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
-        .btn-outline:hover { background: var(--border); }
+        input { background: transparent; border: none; border-bottom: 1px solid var(--border); color: #fff; padding: 10px; width: 260px; outline: none; transition: 0.3s; font-weight: 200; }
+        input:focus { border-bottom-color: var(--green); }
+        .btn-slim { background: transparent; border: 1px solid var(--green); color: var(--green); padding: 10px 30px; border-radius: 2px; cursor: pointer; font-size: 11px; letter-spacing: 2px; transition: 0.3s; }
+        .btn-slim:hover { background: var(--green); color: #000; }
 
         #app { display: none; flex: 1; flex-direction: column; height: 100vh; }
-        header { padding: 15px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); }
+        header { padding: 15px 40px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+
         .main-container { display: flex; flex: 1; overflow: hidden; }
-        
-        /* Sidebar e Listas */
-        .sidebar { width: 280px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
-        .main-content { flex: 1; padding: 40px; overflow-y: auto; padding-bottom: 160px; }
+        .sidebar { width: 240px; border-right: 1px solid var(--border); padding: 30px; background: var(--bg); }
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; padding-bottom: 140px; }
 
-        .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 6px; cursor: pointer; margin-bottom: 8px; font-size: 0.9rem; font-weight: 500; color: #b3b3b3; transition: 0.2s; }
-        .pl-item:hover { background: #1a1a1a; color: #fff; }
-        .pl-item.active { background: #282828; color: var(--green); }
+        /* UI Elements */
+        .pl-item { padding: 8px 0; font-size: 13px; color: #666; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; border-bottom: 1px solid transparent; }
+        .pl-item:hover { color: #fff; }
+        .pl-item.active { color: var(--green); border-bottom: 1px solid rgba(29, 185, 84, 0.3); }
 
-        .song-row { padding: 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
-        .song-row:hover { background: rgba(255,255,255,0.03); }
-        .song-info { flex: 1; cursor: pointer; }
-        .song-info b { font-weight: 500; font-size: 1rem; }
-        .song-info small { color: #888; margin-left: 15px; font-family: monospace; }
+        .song-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border); transition: 0.3s; }
+        .song-row:hover { color: #fff; border-bottom-color: #333; }
+        .song-info { cursor: pointer; flex: 1; font-weight: 200; font-size: 15px; }
+        .song-info b { font-weight: 400; }
 
-        /* Ícones Minimalistas SVG */
-        .icon-btn { background: none; border: none; cursor: pointer; padding: 5px; fill: #666; transition: 0.2s; display: flex; align-items: center; }
-        .icon-btn:hover { fill: var(--green); }
-        .icon-del:hover { fill: var(--red); }
+        /* Player Slim Footer */
+        footer { background: #0a0a0a; border-top: 1px solid var(--border); padding: 20px 50px; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
+        .player-grid { display: grid; grid-template-columns: 1fr 2fr 1fr; align-items: center; max-width: 1400px; margin: 0 auto; gap: 40px; }
 
-        /* Player Footer */
-        footer { background: #121212; padding: 25px 40px; border-top: 1px solid var(--border); position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
-        .player-ctrl { display: flex; align-items: center; gap: 40px; justify-content: space-between; max-width: 1200px; margin: 0 auto; }
-        
-        .play-btn { width: 56px; height: 56px; border-radius: 50%; background: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .play-btn:hover { transform: scale(1.05); }
-        .play-btn svg { fill: #000; width: 24px; }
+        .play-circle { width: 45px; height: 45px; border: 1px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; background: transparent; }
+        .play-circle:hover { background: #fff; }
+        .play-circle:hover svg { fill: #000; }
+        .play-circle svg { fill: #fff; width: 18px; transition: 0.3s; }
 
-        input[type="range"] { -webkit-appearance: none; height: 4px; border-radius: 2px; background: #333; accent-color: var(--green); }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--green); cursor: pointer; }
+        /* Sliders Hairline */
+        input[type="range"] { -webkit-appearance: none; background: transparent; cursor: pointer; width: 100%; }
+        input[type="range"]::-webkit-slider-runnable-track { background: #222; height: 1px; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: var(--green); margin-top: -4.5px; border: 1px solid #000; }
+
+        .icon-small { fill: #444; transition: 0.2s; cursor: pointer; }
+        .icon-small:hover { fill: var(--red); }
     </style>
 </head>
 <body>
 
     <div id="auth-screen">
-        <div class="gm-logo">GIG<span>MASTER</span></div>
-        <input type="email" id="email" placeholder="E-mail">
+        <div class="logo-thin">GIG<span>MASTER</span></div>
+        <input type="email" id="email" placeholder="Email">
         <input type="password" id="pass" placeholder="Senha">
-        <button class="btn btn-green" style="width:300px" onclick="login()">Entrar no Backstage</button>
-        <p id="msg" style="color:var(--green); font-size:12px;"></p>
+        <button class="btn-slim" onclick="login()">ENTER STATION</button>
+        <p id="msg"></p>
     </div>
 
     <div id="app">
         <header>
-            <div class="gm-logo" style="font-size: 1.2rem; margin:0">GIG<span>MASTER</span> PRO</div>
-            <button class="btn btn-outline" style="padding: 8px 16px; font-size: 11px;" onclick="logout()">Logout</button>
+            <div style="font-weight: 200; letter-spacing: 2px; font-size: 14px;">GIGMASTER <span style="font-weight: 600; color: var(--green);">PRO</span></div>
+            <button class="btn-slim" style="padding: 5px 15px; font-size: 9px;" onclick="logout()">LOGOUT</button>
         </header>
 
         <div class="main-container">
             <div class="sidebar">
-                <button class="btn btn-outline" style="width:100%; margin-bottom:20px;" onclick="addPl()">+ Nova Pasta</button>
+                <div style="font-size: 10px; color: #444; letter-spacing: 2px; margin-bottom: 20px;">PLAYLISTS</div>
                 <div id="pl-list"></div>
+                <button onclick="addPl()" style="background:none; border:none; color:var(--green); font-size: 11px; cursor:pointer; margin-top:20px; padding:0;">+ NEW FOLDER</button>
             </div>
+            
             <div class="main-content">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
-                    <h2 id="pl-title" style="margin:0; font-weight:800; font-size:1.8rem;">Biblioteca</h2>
-                    <label class="btn btn-green" id="btn-up" style="display:none; font-size:12px;">Importar Audio <input type="file" id="up-mp3" hidden></label>
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:40px;">
+                    <h1 id="pl-title" style="font-weight: 200; font-size: 2.5rem; margin:0; letter-spacing: -1px;">Select Folder</h1>
+                    <label class="btn-slim" id="btn-up" style="display:none;">UPLOAD MP3 <input type="file" id="up-mp3" hidden></label>
                 </div>
                 <div id="song-list"></div>
             </div>
         </div>
 
         <footer>
-            <div class="player-ctrl">
-                <div style="min-width: 150px;">
-                    <small style="color:#666; font-weight:800; font-size:10px; text-transform:uppercase;">Pitch</small>
-                    <div style="display:flex; align-items:center; gap:12px; margin-top:5px;">
-                        <input type="range" id="p-slide" min="-7" max="7" value="0" style="width:80px">
-                        <span id="p-val" style="font-weight:bold; width:20px; color:var(--green)">0</span>
-                        <button onclick="savePitch()" class="icon-btn" title="Salvar Tom">
-                            <svg viewBox="0 0 24 24" width="18"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
-                        </button>
+            <div class="player-grid">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <div style="text-align:left;">
+                        <div style="font-size:9px; color:#444; letter-spacing:1px; margin-bottom:4px;">PITCH</div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <input type="range" id="p-slide" min="-7" max="7" value="0" style="width:60px">
+                            <span id="p-val" style="font-size:12px; font-weight:600; color:var(--green); width:20px;">0</span>
+                            <svg onclick="savePitch()" class="icon-small" viewBox="0 0 24 24" width="14"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        </div>
                     </div>
                 </div>
 
-                <div style="display:flex; flex-direction:column; align-items:center; flex:1; max-width:600px; gap:10px;">
-                    <div id="now-playing" style="font-size:12px; color:#aaa; font-weight:500;">Selecione uma faixa</div>
-                    <div style="display:flex; align-items:center; gap:20px; width:100%;">
-                        <button id="play-btn" class="play-btn">
-                            <svg id="svg-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        </button>
-                        <input type="range" id="seek-slide" value="0" step="0.1" style="flex:1;">
+                <div style="display:flex; align-items:center; gap:30px;">
+                    <button id="play-btn" class="play-circle">
+                        <svg id="svg-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
+                    <div style="flex:1;">
+                        <div id="now-playing" style="font-size:10px; color:#555; letter-spacing:1px; margin-bottom:8px; text-transform:uppercase; text-align:center;">Station Standby</div>
+                        <input type="range" id="seek-slide" value="0" step="0.1">
                     </div>
                 </div>
 
-                <div style="display:flex; align-items:center; gap:15px; min-width:150px; justify-content: flex-end;">
-                    <svg viewBox="0 0 24 24" width="20" fill="#666"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-                    <input type="range" id="v-slide" min="-40" max="6" value="0" style="width:100px">
+                <div style="display:flex; align-items:center; justify-content:flex-end; gap:15px;">
+                    <svg viewBox="0 0 24 24" width="14" fill="#333"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                    <input type="range" id="v-slide" min="-40" max="6" value="0" style="width:80px">
                 </div>
             </div>
         </footer>
@@ -131,11 +130,10 @@
 
         let curPl = null, curSongId = null;
 
-        // AUTH & CHECK
         async function login() {
             const email = document.getElementById('email').value, password = document.getElementById('pass').value;
             const { error } = await sb.auth.signInWithPassword({ email, password });
-            if(error) { await sb.auth.signUp({ email, password }); document.getElementById('msg').innerText = "Conta criada! Entre agora."; } 
+            if(error) { await sb.auth.signUp({ email, password }); document.getElementById('msg').innerText = "Conta criada! Entre."; } 
             else { check(); }
         }
         async function check() {
@@ -144,65 +142,40 @@
         }
         function logout() { sb.auth.signOut(); location.reload(); }
 
-        // PLAYLISTS
         async function loadPl() {
             const { data: { user } } = await sb.auth.getUser();
             const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
             document.getElementById('pl-list').innerHTML = data.map(p => `
                 <div class="pl-item ${curPl==p.id?'active':''}" onclick="selPl(${p.id},'${p.nome}')">
-                    <span>${p.nome}</span>
-                    <button class="icon-btn icon-del" onclick="event.stopPropagation(); delPl(${p.id},'${p.nome}')">
-                        <svg viewBox="0 0 24 24" width="16"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                    </button>
+                    <span>${p.nome.toUpperCase()}</span>
+                    <svg onclick="event.stopPropagation(); delPl(${p.id},'${p.nome}')" class="icon-small" viewBox="0 0 24 24" width="12"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                 </div>`).join('');
         }
 
         async function addPl() {
-            const n = prompt("Nome da Pasta:"); if(!n) return;
+            const n = prompt("FOLDER NAME:"); if(!n) return;
             const { data: { user } } = await sb.auth.getUser();
             await sb.from('playlists').insert({ nome: n, user_id: user.id }); loadPl();
         }
 
-        async function delPl(id, nome) {
-            if(!confirm(`Apagar "${nome}"?`)) return;
-            await sb.from('musicas').delete().eq('playlist_id', id);
-            await sb.from('playlists').delete().eq('id', id);
-            loadPl();
-        }
+        async function delPl(id, n) { if(confirm(`DELETE ${n}?`)) { await sb.from('musicas').delete().eq('playlist_id', id); await sb.from('playlists').delete().eq('id', id); loadPl(); } }
 
         function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; document.getElementById('btn-up').style.display = 'block'; loadSongs(); loadPl(); }
 
-        // SONGS
         async function loadSongs() {
-            if(!curPl) return;
             const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl);
             document.getElementById('song-list').innerHTML = data.map(s => `
                 <div class="song-row ${curSongId === s.id ? 'active' : ''}">
                     <div class="song-info" onclick="playSong('${s.audio_url}', ${s.pitch}, '${s.titulo.replace(/'/g, "\\'")}', ${s.id})">
-                        <b>${s.titulo}</b> <small>${s.pitch > 0 ? '+'+s.pitch : s.pitch} ST</small>
+                        <b>${s.titulo}</b>
                     </div>
-                    <button class="icon-btn icon-del" onclick="delSong(${s.id}, '${s.titulo.replace(/'/g, "\\'")}')">
-                        <svg viewBox="0 0 24 24" width="18"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                    </button>
+                    <svg onclick="delSong(${s.id}, '${s.titulo}')" class="icon-small" viewBox="0 0 24 24" width="14"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
                 </div>`).join('');
-        }
-
-        async function delSong(id, titulo) {
-            if(!confirm(`Remover "${titulo}"?`)) return;
-            await sb.from('musicas').delete().eq('id', id); loadSongs();
-        }
-
-        async function savePitch() {
-            if(!curSongId) return;
-            const novoPitch = document.getElementById('p-slide').value;
-            const { error } = await sb.from('musicas').update({ pitch: parseInt(novoPitch) }).eq('id', curSongId);
-            if(!error) loadSongs();
         }
 
         async function playSong(url, pitch, titulo, id) {
             try {
-                curSongId = id;
-                document.getElementById('now-playing').innerText = "Loading Audio...";
+                curSongId = id; document.getElementById('now-playing').innerText = "FETCHING...";
                 player.stop(); player.unsync(); Tone.Transport.stop();
                 await player.load(url);
                 shift.pitch = pitch;
@@ -210,12 +183,16 @@
                 document.getElementById('p-slide').value = pitch;
                 document.getElementById('seek-slide').max = player.buffer.duration;
                 document.getElementById('now-playing').innerText = titulo;
-                player.sync().start(0);
-                loadSongs();
+                player.sync().start(0); loadSongs();
             } catch (e) { console.error(e); }
         }
 
-        // CONTROLS
+        async function savePitch() {
+            if(!curSongId) return;
+            await sb.from('musicas').update({ pitch: parseInt(document.getElementById('p-slide').value) }).eq('id', curSongId);
+            loadSongs();
+        }
+
         document.getElementById('play-btn').onclick = async () => {
             await Tone.start();
             if(Tone.Transport.state === "started") {
