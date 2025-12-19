@@ -3,221 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v24.0</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
-    <style>
-        :root { --green: #1db954; --bg: #0b0b0b; --surface: #121212; --border: #282828; --text: #fff; --sub: #888; }
-        body.light-theme { --green: #e91e63; --bg: #e0e0e0; --surface: #f5f5f5; --border: #cccccc; --text: #1a1a1a; --sub: #555555; }
-        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: 0.3s; }
-
-        /* HEADER & TOAST */
-        header { height: 60px; padding: 0 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); z-index: 500; }
-        #toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: var(--green); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 12px; font-weight: 600; display: none; z-index: 4000; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-
-        /* MODAIS */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
-        .modal-box { background: var(--surface); padding: 30px; border-radius: 24px; border: 1px solid var(--border); width: 90%; max-width: 360px; text-align: center; }
-        .modal-box input { width: 100%; padding: 14px; background: rgba(0,0,0,0.05); border: 1px solid var(--border); border-radius: 12px; color: var(--text); margin-bottom: 20px; }
-
-        /* LAYOUT */
-        .main-container { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 280px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
-        .main-content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 180px; }
-        
-        .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 10px; background: rgba(255,255,255,0.03); cursor: pointer; font-size: 11px; }
-        .pl-item.active { background: var(--green); color: #fff; }
-        .pl-actions { display: flex; gap: 8px; opacity: 0.6; }
-        .pl-actions svg:hover { fill: #fff; }
-
-        .song-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
-        .song-row.active { border-left: 4px solid var(--green); background: rgba(29, 185, 84, 0.05); color: var(--green); }
-
-        footer { background: var(--surface); border-top: 1px solid var(--border); padding: 15px 25px; position: fixed; bottom: 0; width: 100%; height: 150px; }
-        .btn-slim { padding: 12px 18px; border-radius: 12px; border: 1px solid var(--green); color: var(--green); background: transparent; font-size: 10px; font-weight: 600; cursor: pointer; text-transform: uppercase; }
-        .btn-fill { background: var(--green); color: #fff !important; border: none; }
-        @media (max-width: 768px) { .sidebar { display: none; } }
-    </style>
-</head>
-<body>
-
-    <div id="toast">LINK COPIADO!</div>
-
-    <div id="master-modal" class="modal-overlay">
-        <div class="modal-box">
-            <h3 id="mm-title" style="color:var(--green)">Título</h3>
-            <p id="mm-text" style="font-size:12px; color:var(--sub); margin-bottom:15px;"></p>
-            <input type="text" id="mm-input" style="display:none;" placeholder="Digite aqui...">
-            <div style="display:flex; gap:12px;">
-                <button class="btn-slim" id="mm-cancel" style="flex:1; border-color:var(--sub); color:var(--sub)">CANCELAR</button>
-                <button class="btn-slim btn-fill" id="mm-confirm" style="flex:1">CONFIRMAR</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-pix" class="modal-overlay" onclick="closeM('modal-pix')">
-        <div class="modal-box" onclick="event.stopPropagation()">
-            <h3>APOIAR VIA PIX</h3>
-            <img src="pix.jpg" style="width:100%; border-radius:15px; margin:20px 0; border:1px solid var(--border);">
-            <button class="btn-slim btn-fill" style="width:100%" onclick="closeM('modal-pix')">FECHAR</button>
-        </div>
-    </div>
-
-    <div id="auth-screen" style="position:fixed; inset:0; background:#000; z-index:2000; display:flex; align-items:center; justify-content:center;">
-        <div style="text-align:center; width: 320px;">
-            <h2 style="color:var(--green); letter-spacing:5px;">GIGMASTER</h2>
-            <input type="email" id="f-email" placeholder="E-mail" style="width:100%; padding:15px; margin-bottom:10px; border-radius:10px; background:#111; border:1px solid #333; color:#fff;">
-            <input type="password" id="f-pass" placeholder="Senha" style="width:100%; padding:15px; margin-bottom:20px; border-radius:10px; background:#111; border:1px solid #333; color:#fff;">
-            <button class="btn-slim btn-fill" onclick="doAuth('in')" style="width:100%; margin-bottom:10px;">ENTRAR</button>
-            <button class="btn-slim" onclick="loginSocial('google')" style="width:100%; color:#fff; border-color:#444;">GOOGLE</button>
-        </div>
-    </div>
-
-    <div id="app" style="display:none; flex-direction:column; height:100vh;">
-        <header>
-            <div style="font-weight:600; font-size:14px;">GIGMASTER <span style="color:var(--green)">PRO</span></div>
-            <div class="u-badge" onclick="toggleD()"><span id="u-display">PERFIL</span> ▼
-                <div class="drop-menu" id="u-drop" style="display:none; position:absolute; right:0; top:50px; background:var(--surface); border:1px solid var(--border); width:180px; border-radius:8px;">
-                    <div onclick="toggleT()" style="padding:12px; border-bottom:1px solid var(--border); font-size:11px;">🌓 ALTERAR TEMA</div>
-                    <div onclick="uiRenameNick()" style="padding:12px; border-bottom:1px solid var(--border); font-size:11px;">👤 NICKNAME</div>
-                    <div onclick="openM('modal-pix')" style="padding:12px; border-bottom:1px solid var(--border); font-size:11px;">💎 APOIAR PIX</div>
-                    <div onclick="logout()" style="padding:12px; color:#ff4d4d; font-size:11px;">🚪 SAIR</div>
-                </div>
-            </div>
-        </header>
-
-        <div class="main-container">
-            <div class="sidebar">
-                <button class="btn-slim btn-fill" style="width:100%" onclick="uiAddFolder()">+ NOVA PASTA</button>
-                <div id="pl-list" style="margin-top:20px;"></div>
-            </div>
-            <div class="main-content">
-                <h2 id="pl-title" style="margin:0 0 20px 0; font-weight:200;">Biblioteca</h2>
-                <div id="upload-section" style="display:none; margin-bottom:20px;">
-                    <label class="btn-slim">+ IMPORTAR MP3 <input type="file" id="up-file" hidden></label>
-                </div>
-                <div id="song-list"></div>
-            </div>
-        </div>
-
-        <footer>
-            <div style="max-width:1000px; margin:0 auto; display:flex; flex-direction:column; gap:12px;">
-                <div id="cur-track" style="text-align:center; font-size:11px; color:var(--green); font-weight:600;">Standby</div>
-                <input type="range" id="seek" value="0" step="0.1" style="width:100%; accent-color:var(--green);">
-                <div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <input type="range" id="p-slide" min="-7" max="7" value="0" style="width:60px">
-                        <b id="p-val" style="font-size:12px; width:20px;">0</b>
-                        <svg onclick="saveP()" viewBox="0 0 24 24" width="18" fill="var(--green)" style="cursor:pointer;"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
-                    </div>
-                    <button id="play-btn" style="width:55px; height:55px; border-radius:50%; background:var(--text); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer;"><svg id="svg-play" viewBox="0 0 24 24" width="24"><path fill="var(--bg)" d="M8 5v14l11-7z"/></svg></button>
-                    <div style="display:flex; justify-content:flex-end;"><input type="range" id="v-slide" min="-40" max="6" value="0" style="width:70px"></div>
-                </div>
-            </div>
-        </footer>
-    </div>
-
-    <script>
-        const SB_URL = 'https://mdtqwugkaonipbfqqvhj.supabase.co';
-        const SB_KEY = 'sb_publishable_ercRd8vFjpnVyXf0WiPVSw_tWCSmsGm';
-        const sb = supabase.createClient(SB_URL, SB_KEY);
-        
-        const player = new Tone.Player();
-        const shift = new Tone.PitchShift(0);
-        player.connect(shift).toDestination();
-
-        let curPl = null, curSId = null;
-
-        // --- AUTH ---
-        async function doAuth(t) {
-            const e = document.getElementById('f-email').value, p = document.getElementById('f-pass').value;
-            const { error } = t === 'in' ? await sb.auth.signInWithPassword({email:e, password:p}) : await sb.auth.signUp({email:e, password:p});
-            if(error) alert(error.message); else checkSession();
-        }
-        async function loginSocial(p) { await sb.auth.signInWithOAuth({ provider: p, options: { redirectTo: window.location.href }}); }
-        async function checkSession() {
-            const { data: { session } } = await sb.auth.getSession();
-            if(session) {
-                document.getElementById('auth-screen').style.display='none'; document.getElementById('app').style.display='flex';
-                const { data: profile } = await sb.from('profiles').select('username').eq('id', session.user.id).single();
-                document.getElementById('u-display').innerText = (profile?.username || session.user.email.split('@')[0]).toUpperCase();
-                loadPl();
-            }
-        }
-
-        // --- PLAYLISTS ---
-        async function loadPl() {
-            const { data: { user } } = await sb.auth.getUser();
-            const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
-            document.getElementById('pl-list').innerHTML = data.map(p => `
-                <div class="pl-item ${curPl == p.id ? 'active' : ''}" onclick="selPl(${p.id},'${p.nome}')">
-                    <span>📂 ${p.nome.toUpperCase()}</span>
-                    <div class="pl-actions">
-                        <svg onclick="event.stopPropagation(); copyLink(${p.id})" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
-                        <svg onclick="event.stopPropagation(); uiRenameFolder(${p.id},'${p.nome}')" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
-                        <svg onclick="event.stopPropagation(); uiDelFolder(${p.id},'${p.nome}')" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                    </div>
-                </div>`).join('');
-        }
-
-        function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; document.getElementById('upload-section').style.display = 'block'; loadSongs(); loadPl(); }
-        async function loadSongs() {
-            const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl).order('titulo');
-            document.getElementById('song-list').innerHTML = data.map(s => `
-                <div class="song-row ${curSId==s.id?'active':''}" onclick="playS('${s.audio_url}',${s.pitch},'${s.titulo}',${s.id})">
-                    <b>${s.titulo}</b> <span>${s.pitch} ST <span onclick="event.stopPropagation(); uiDelSong(${s.id})" style="margin-left:15px; opacity:0.4">✕</span></span>
-                </div>`).join('');
-        }
-
-        // --- AUDIO ---
-        async function playS(url, p, tit, id) {
-            await Tone.start(); curSId = id; document.getElementById('cur-track').innerText = "CARREGANDO...";
-            player.stop(); await player.load(url); 
-            shift.pitch = p; document.getElementById('p-slide').value = p; document.getElementById('p-val').innerText = p;
-            document.getElementById('seek').max = player.buffer.duration; document.getElementById('cur-track').innerText = tit;
-            player.sync().start(0); Tone.Transport.start(); loadSongs();
-            document.getElementById('svg-play').innerHTML = '<path fill="var(--bg)" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-        }
-
-        document.getElementById('p-slide').oninput = (e) => { 
-            const v = parseInt(e.target.value); shift.pitch = v; document.getElementById('p-val').innerText = v; 
-        };
-
-        // --- MODAIS ---
-        function showModal({title, text, input, onConfirm}) {
-            const o = document.getElementById('master-modal'), i = document.getElementById('mm-input');
-            document.getElementById('mm-title').innerText = title; document.getElementById('mm-text').innerText = text || "";
-            i.style.display = input ? 'block' : 'none'; o.style.display = 'flex';
-            document.getElementById('mm-confirm').onclick = () => { onConfirm(i.value || true); o.style.display = 'none'; };
-            document.getElementById('mm-cancel').onclick = () => o.style.display = 'none';
-        }
-
-        function uiAddFolder() { showModal({ title: "NOVA PASTA", input: true, onConfirm: async (n) => { const {data:{user}} = await sb.auth.getUser(); await sb.from('playlists').insert({nome:n, user_id:user.id}); loadPl(); }}); }
-        function uiRenameFolder(id, old) { showModal({ title: "RENOMEAR", input: true, onConfirm: async (n) => { await sb.from('playlists').update({nome:n}).eq('id', id); loadPl(); }}); }
-        function uiDelFolder(id, n) { showModal({ title: "EXCLUIR", text: `Apagar ${n}?`, onConfirm: async () => { await sb.from('musicas').delete().eq('playlist_id', id); await sb.from('playlists').delete().eq('id', id); loadPl(); }}); }
-        function uiDelSong(id) { showModal({ title: "REMOVER", onConfirm: async () => { await sb.from('musicas').delete().eq('id', id); loadSongs(); }}); }
-        function uiRenameNick() { showModal({ title: "NICKNAME", input: true, onConfirm: async (n) => { const {data:{user}} = await sb.auth.getUser(); await sb.from('profiles').upsert({id:user.id, username:n}); document.getElementById('u-display').innerText = n.toUpperCase(); }}); }
-
-        function copyLink(id) { navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?share=${id}`).then(() => showToast("LINK COPIADO!")); }
-        function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2000); }
-        function toggleD() { const d = document.getElementById('u-drop'); d.style.display = d.style.display==='block'?'none':'block'; }
-        function toggleT() { document.body.classList.toggle('light-theme'); }
-        function openM(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeM(id) { document.getElementById(id).style.display = 'none'; }
-        async function logout() { await sb.auth.signOut(); location.reload(); }
-        async function saveP() { if(curSId) { await sb.from('musicas').update({pitch: parseInt(document.getElementById('p-slide').value)}).eq('id', curSId); showToast("TOM SALVO!"); loadSongs(); } }
-
-        document.getElementById('play-btn').onclick = () => { if(Tone.Transport.state === "started") Tone.Transport.pause(); else Tone.Transport.start(); };
-        document.getElementById('v-slide').oninput = (e) => Tone.Destination.volume.rampTo(parseFloat(e.target.value), 0.1);
-        setInterval(() => { if(Tone.Transport.state === "started") document.getElementById('seek').value = Tone.Transport.seconds; }, 500);
-        document.getElementById('up-file').onchange = async (e) => {<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v24.1</title>
+    <title>GIGMASTER PRO | v24.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
@@ -334,6 +120,7 @@
         const SB_KEY = 'sb_publishable_ercRd8vFjpnVyXf0WiPVSw_tWCSmsGm';
         const sb = supabase.createClient(SB_URL, SB_KEY);
         
+        // --- NOVO SETUP DE ÁUDIO ---
         const player = new Tone.Player();
         const shift = new Tone.PitchShift(0);
         player.connect(shift).toDestination();
@@ -380,37 +167,36 @@
                 </div>`).join('');
         }
 
-        // --- FIX CARREGAMENTO ---
+        // --- CARREGAMENTO SIMPLIFICADO ---
         async function playS(url, p, tit, id) {
-            await Tone.start();
-            curSId = id;
-            document.getElementById('cur-track').innerText = "CARREGANDO ÁUDIO...";
-            
-            // Para qualquer áudio anterior e reseta transporte
-            player.stop();
-            Tone.Transport.stop();
-            Tone.Transport.seconds = 0;
-
             try {
-                // Carrega o áudio completamente antes de liberar o play
-                await player.load(url);
+                // Ativa áudio no navegador
+                await Tone.start();
+                curSId = id;
+                document.getElementById('cur-track').innerText = "BAIXANDO...";
                 
-                // Aplica o pitch salvo
+                // Reseta player
+                player.stop();
+                
+                // Carrega novo buffer
+                const buffer = await new Tone.ToneAudioBuffer().load(url);
+                player.buffer = buffer;
+                
+                // Ajusta Pitch
                 shift.pitch = p;
                 document.getElementById('p-slide').value = p;
                 document.getElementById('p-val').innerText = p;
 
-                document.getElementById('seek').max = player.buffer.duration;
+                document.getElementById('seek').max = buffer.duration;
                 document.getElementById('cur-track').innerText = tit;
                 
-                // Inicia o player sincronizado ao transporte
-                player.sync().start(0);
-                Tone.Transport.start();
+                // Play Direto
+                player.start();
                 
                 document.getElementById('play-path').setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
                 loadSongs();
             } catch (err) {
-                document.getElementById('cur-track').innerText = "ERRO AO CARREGAR";
+                document.getElementById('cur-track').innerText = "ERRO NO CARREGAMENTO";
                 console.error(err);
             }
         }
@@ -445,38 +231,25 @@
         async function saveP() { if(curSId) { await sb.from('musicas').update({pitch: parseInt(document.getElementById('p-slide').value)}).eq('id', curSId); showToast("TOM SALVO!"); loadSongs(); } }
 
         document.getElementById('play-btn').onclick = () => {
-            if(Tone.Transport.state === "started") {
-                Tone.Transport.pause();
+            if(player.state === "started") {
+                player.stop();
                 document.getElementById('play-path').setAttribute('d', 'M8 5v14l11-7z');
             } else {
-                Tone.Transport.start();
+                player.start();
                 document.getElementById('play-path').setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
             }
         };
 
         document.getElementById('v-slide').oninput = (e) => Tone.Destination.volume.rampTo(parseFloat(e.target.value), 0.1);
-        document.getElementById('seek').oninput = (e) => { Tone.Transport.seconds = parseFloat(e.target.value); };
+        document.getElementById('seek').oninput = (e) => { player.seek(parseFloat(e.target.value)); };
         
         setInterval(() => {
-            if(Tone.Transport.state === "started") {
-                document.getElementById('seek').value = Tone.Transport.seconds;
+            if(player.state === "started") {
+                document.getElementById('seek').value = player.seconds;
             }
         }, 500);
 
         document.getElementById('up-file').onchange = async (e) => {
-            const f = e.target.files[0]; if(!f) return;
-            showToast("CARREGANDO MP3...");
-            const path = `audios/${Date.now()}_${f.name}`;
-            await sb.storage.from('audios').upload(path, f);
-            const { data: { publicUrl } } = sb.storage.from('audios').getPublicUrl(path);
-            await sb.from('musicas').insert({ titulo: f.name, audio_url: publicUrl, playlist_id: curPl, pitch: 0 });
-            loadSongs(); showToast("IMPORTADO!");
-        };
-
-        checkSession();
-    </script>
-</body>
-</html>
             const f = e.target.files[0]; if(!f) return;
             showToast("CARREGANDO MP3...");
             const path = `audios/${Date.now()}_${f.name}`;
