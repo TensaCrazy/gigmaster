@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v26.5</title>
+    <title>GIGMASTER PRO | v26.8</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
@@ -27,7 +27,6 @@
         
         .pl-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 10px; background: rgba(255,255,255,0.03); cursor: pointer; font-size: 11px; }
         .pl-item.active { background: var(--green); color: #fff; }
-        .pl-actions { display: flex; gap: 8px; opacity: 0.5; }
 
         .song-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
         .song-row.active { border-left: 4px solid var(--green); background: rgba(29, 185, 84, 0.1); color: var(--green); }
@@ -44,8 +43,6 @@
     <div id="master-modal" class="modal-overlay">
         <div class="modal-box"><h3 id="mm-title" style="color:var(--green)"></h3><p id="mm-text" style="font-size:12px; color:var(--sub)"></p><input type="text" id="mm-input" style="display:none;"><div style="display:flex; gap:12px;"><button class="btn-slim" id="mm-cancel" style="flex:1">CANCELAR</button><button class="btn-slim" id="mm-confirm" style="flex:1; background:var(--green); color:#fff; border:none;">OK</button></div></div>
     </div>
-    <div id="modal-bug" class="modal-overlay"><div class="modal-box"><h3>BUG</h3><textarea id="bug-desc" rows="4" style="width:100%; border-radius:10px; margin-bottom:10px;"></textarea><button class="btn-slim" onclick="submitBug()">ENVIAR</button><button class="btn-slim" onclick="closeM('modal-bug')">SAIR</button></div></div>
-    <div id="modal-pix" class="modal-overlay"><div class="modal-box"><h3>PIX</h3><img src="pix.jpg" style="width:100%; border-radius:10px;"><button class="btn-slim" onclick="closeM('modal-pix')" style="width:100%; margin-top:10px;">FECHAR</button></div></div>
 
     <div id="app" style="display:flex; flex-direction:column; height:100vh;">
         <header>
@@ -54,8 +51,6 @@
                 <div class="drop-menu" id="u-drop">
                     <div onclick="toggleT()">🌓 TEMA</div>
                     <div onclick="uiRenameNick()">👤 NICKNAME</div>
-                    <div onclick="openM('modal-bug')">🐞 RELATAR BUG</div>
-                    <div onclick="openM('modal-pix')">💎 APOIAR PIX</div>
                     <div onclick="logout()" style="color:#ff4d4d">🚪 SAIR</div>
                 </div>
             </div>
@@ -94,18 +89,13 @@
         const SB_KEY = 'sb_publishable_ercRd8vFjpnVyXf0WiPVSw_tWCSmsGm';
         const sb = supabase.createClient(SB_URL, SB_KEY);
         
-        let player = null;
-        let shift = null;
+        // --- ÁUDIO LINEAR (FIX DUPLICADO) ---
+        const shift = new Tone.PitchShift(0).toDestination();
+        const player = new Tone.Player();
+        player.disconnect(); // Garante que o player não vá direto para a saída
+        player.connect(shift);
 
         let curPl = null, curSId = null;
-
-        // INICIALIZA O AUDIO COM CONTEXTO LIMPO
-        async function initAudio() {
-            if (player) { player.dispose(); shift.dispose(); }
-            player = new Tone.Player().toDestination();
-            shift = new Tone.PitchShift(0).toDestination();
-            player.connect(shift);
-        }
 
         async function checkSession() {
             const { data: { session } } = await sb.auth.getSession();
@@ -118,15 +108,10 @@
 
         async function loadPl() {
             const { data: { user } } = await sb.auth.getUser();
-            const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
+            const { data } = await sb.from('playlists').select('*').eq('user_id', user.id).order('created_at');
             document.getElementById('pl-list').innerHTML = data.map(p => `
                 <div class="pl-item ${curPl == p.id ? 'active' : ''}" onclick="selPl(${p.id},'${p.nome}')">
                     <span>📂 ${p.nome.toUpperCase()}</span>
-                    <div class="pl-actions">
-                        <svg onclick="event.stopPropagation(); copyLink(${p.id})" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
-                        <svg onclick="event.stopPropagation(); uiRenameFolder(${p.id},'${p.nome}')" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
-                        <svg onclick="event.stopPropagation(); uiDelFolder(${p.id},'${p.nome}')" viewBox="0 0 24 24" width="14" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                    </div>
                 </div>`).join('');
         }
 
@@ -135,70 +120,37 @@
             const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl).order('titulo');
             document.getElementById('song-list').innerHTML = data.map(s => `
                 <div class="song-row ${curSId==s.id?'active':''}" onclick="playS('${s.audio_url}',${s.pitch},'${s.titulo}',${s.id})">
-                    <div style="flex:1"><b>${s.titulo}</b> <small style="opacity:0.5; margin-left:8px;">${s.pitch} ST</small></div>
-                    <div style="display:flex; gap:12px; align-items:center;">
-                        <svg onclick="event.stopPropagation(); window.open('${s.audio_url}')" viewBox="0 0 24 24" width="16" fill="currentColor" style="opacity:0.4"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                        <span onclick="event.stopPropagation(); uiDelSong(${s.id})" style="opacity:0.3">✕</span>
-                    </div>
+                    <b>${s.titulo}</b> <span>${s.pitch} ST</span>
                 </div>`).join('');
         }
 
         async function playS(url, p, tit, id) {
             try {
                 await Tone.start();
-                await initAudio(); // REINICIA O MOTOR A CADA MUSICA
-                
                 curSId = id;
                 document.getElementById('cur-track').innerText = "SINCRONIZANDO...";
-                
+                player.stop();
                 const response = await fetch(url);
                 const blob = await response.blob();
                 const objectUrl = URL.createObjectURL(blob);
-                
                 await player.load(objectUrl);
-                
                 shift.pitch = p;
                 document.getElementById('p-slide').value = p;
                 document.getElementById('p-val').innerText = p;
                 document.getElementById('seek').max = player.buffer.duration;
                 document.getElementById('cur-track').innerText = tit;
-                
                 player.start();
                 document.getElementById('play-path').setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
-                loadSongs();
-            } catch (err) { 
-                console.error(err);
-                document.getElementById('cur-track').innerText = "ERRO AO CARREGAR";
-            }
+            } catch (err) { console.error(err); }
         }
 
         document.getElementById('p-slide').oninput = (e) => { 
             const v = parseFloat(e.target.value); 
-            if (shift) shift.pitch = v; 
+            shift.pitch = v; 
             document.getElementById('p-val').innerText = v; 
         };
 
-        async function saveP() { 
-            if(curSId) { 
-                const p = parseInt(document.getElementById('p-slide').value);
-                await sb.from('musicas').update({pitch: p}).eq('id', curSId); 
-                showToast("TOM SALVO!"); loadSongs(); 
-            } 
-        }
-
-        document.getElementById('play-btn').onclick = () => {
-            if (player && player.state === "started") {
-                player.stop();
-                document.getElementById('play-path').setAttribute('d', 'M8 5v14l11-7z');
-            } else if (player) {
-                player.start();
-                document.getElementById('play-path').setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
-            }
-        };
-
-        document.getElementById('v-slide').oninput = (e) => Tone.Destination.volume.rampTo(parseFloat(e.target.value), 0.1);
-        setInterval(() => { if(player && player.state === "started") document.getElementById('seek').value = player.seconds; }, 500);
-
+        // --- DATABASE FIX (NICKNAME & PLAYLIST) ---
         function showModal({title, text, input, onConfirm}) {
             const o = document.getElementById('master-modal'), i = document.getElementById('mm-input');
             document.getElementById('mm-title').innerText = title; document.getElementById('mm-text').innerText = text || "";
@@ -207,19 +159,36 @@
             document.getElementById('mm-cancel').onclick = () => o.style.display = 'none';
         }
 
-        function uiAddFolder() { showModal({ title: "NOVA PASTA", input: true, onConfirm: async (n) => { const {data:{user}} = await sb.auth.getUser(); await sb.from('playlists').insert({nome:n, user_id:user.id}); loadPl(); }}); }
-        function uiRenameFolder(id, old) { showModal({ title: "RENOMEAR PASTA", input: true, onConfirm: async (n) => { await sb.from('playlists').update({nome:n}).eq('id', id); loadPl(); }}); }
-        function uiDelFolder(id, n) { showModal({ title: "EXCLUIR", text: `Apagar ${n}?`, onConfirm: async () => { await sb.from('musicas').delete().eq('playlist_id', id); await sb.from('playlists').delete().eq('id', id); loadPl(); }}); }
-        function uiDelSong(id) { showModal({ title: "REMOVER", onConfirm: async () => { await sb.from('musicas').delete().eq('id', id); loadSongs(); }}); }
-        function uiRenameNick() { showModal({ title: "NICKNAME", input: true, onConfirm: async (n) => { const {data:{user}} = await sb.auth.getUser(); await sb.from('profiles').upsert({id:user.id, username:n}); document.getElementById('u-display').innerText = n.toUpperCase(); }}); }
-        async function submitBug() { const d = document.getElementById('bug-desc').value; const {data:{user}} = await sb.auth.getUser(); await sb.from('bugs').insert({user_id:user.id, description:d, user_email:user.email}); alert("Enviado!"); closeM('modal-bug'); }
+        function uiAddFolder() { 
+            showModal({ title: "NOVA PASTA", input: true, onConfirm: async (n) => { 
+                const {data:{user}} = await sb.auth.getUser();
+                await sb.from('playlists').insert([{ nome: n, user_id: user.id }]);
+                loadPl(); 
+            }}); 
+        }
+
+        function uiRenameNick() { 
+            showModal({ title: "NICKNAME", input: true, onConfirm: async (n) => { 
+                const {data:{user}} = await sb.auth.getUser();
+                await sb.from('profiles').upsert({ id: user.id, username: n });
+                document.getElementById('u-display').innerText = n.toUpperCase(); 
+                showToast("NICKNAME ATUALIZADO!");
+            }}); 
+        }
+
         function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2000); }
         function toggleD() { const d = document.getElementById('u-drop'); d.style.display = d.style.display==='block'?'none':'block'; }
         function toggleT() { document.body.classList.toggle('light-theme'); }
-        function openM(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeM(id) { document.getElementById(id).style.display = 'none'; }
-        function copyLink(id) { navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?share=${id}`).then(() => showToast("LINK COPIADO!")); }
         async function logout() { await sb.auth.signOut(); location.reload(); }
+        async function saveP() { if(curSId) { await sb.from('musicas').update({pitch: parseInt(document.getElementById('p-slide').value)}).eq('id', curSId); showToast("TOM SALVO!"); loadSongs(); } }
+
+        document.getElementById('play-btn').onclick = () => {
+            if (player.state === "started") { player.stop(); document.getElementById('play-path').setAttribute('d', 'M8 5v14l11-7z'); }
+            else { player.start(); document.getElementById('play-path').setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z'); }
+        };
+
+        document.getElementById('v-slide').oninput = (e) => Tone.Destination.volume.rampTo(parseFloat(e.target.value), 0.1);
+        setInterval(() => { if(player.state === "started") document.getElementById('seek').value = player.seconds; }, 500);
 
         document.getElementById('up-file').onchange = async (e) => {
             const f = e.target.files[0]; if(!f) return;
