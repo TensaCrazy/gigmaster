@@ -182,24 +182,29 @@ const playBtnEl = document.getElementById("play-btn");
  });
  
  /* PLAYLISTS */
- async function loadPlaylists(){
-   const {data:{user}} = await sb.auth.getUser();
-   if(!user) return false;
-   
-   const {data, error} = await sb.from("playlists").select("*").eq("user_id",user.id).order("nome");
-   if(error) return false;
- 
-   const container = document.getElementById("playlist-container");
-   container.innerHTML = (data || []).map(p => `
-     <div class="playlist ${curPl == p.id ? 'active' : ''}" onclick="selectPlaylist(${p.id},'${p.nome}')">
-       <b>${p.nome.toUpperCase()}</b>
-       <div class="pl-tools">
-         <span onclick="event.stopPropagation(); downloadZip(${p.id},'${p.nome}')">📦 ZIP</span>
-         <span onclick="event.stopPropagation(); deletePlaylist(${p.id})">🗑️ EXCLUIR</span>
-       </div>
-     </div>`).join("");
-   return true;
- }
+async function loadPlaylists(){
+  const gu = await sb.auth.getUser();
+  const user = gu?.data?.user;
+  if(!user) return false;
+
+  const {data, error} = await sb.from("playlists").select("*").eq("user_id", user.id).order("nome", { ascending: true });
+  if(error) { console.error('loadPlaylists error', error); return false; }
+
+  const container = document.getElementById("playlist-container");
+  container.innerHTML = (data || []).map(p => {
+    const safeName = JSON.stringify(p.nome);
+    const active = (curPl == p.id) ? 'active' : '';
+    return `
+      <div class="playlist ${active}" onclick="selectPlaylist(${p.id}, ${safeName})">
+        <b>${p.nome.toUpperCase()}</b>
+        <div class="pl-tools">
+          <span onclick="event.stopPropagation(); downloadZip(${p.id}, ${safeName})">📦 ZIP</span>
+          <span onclick="event.stopPropagation(); deletePlaylist(${p.id})">🗑️ EXCLUIR</span>
+        </div>
+      </div>`;
+  }).join("");
+  return true;
+}
  
  /* AUDIO & SONGS */
  function routeAudio(p){ player.disconnect(); p==0?player.toDestination():(pitchNode.pitch=p,player.connect(pitchNode)); }
