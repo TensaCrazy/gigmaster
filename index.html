@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v20.1</title>
+    <title>GIGMASTER PRO | v20.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -13,45 +13,39 @@
     <style>
         :root { --green: #1db954; --bg: #0b0b0b; --surface: #121212; --border: #282828; --text: #fff; --sub: #888; }
         body.light-theme { --bg: #f0f0f0; --surface: #ffffff; --border: #ddd; --text: #111; --sub: #666; }
-
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        /* HEADER & MENU */
         header { height: 60px; padding: 0 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); z-index: 500; }
         .user-menu-container { position: relative; }
-        .user-badge { background: var(--border); padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .user-badge { background: var(--border); padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid transparent; }
         .user-badge:hover { border-color: var(--green); }
         
-        .dropdown { position: absolute; top: 100%; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; width: 200px; display: none; margin-top: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; }
-        .dropdown div { padding: 12px 16px; font-size: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .dropdown { position: absolute; top: 100%; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; width: 200px; display: none; margin-top: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 600; }
+        .dropdown div { padding: 12px 16px; font-size: 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
         .dropdown div:hover { background: var(--green); color: #000; }
 
-        /* MODAIS */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
         .modal-box { background: var(--surface); padding: 25px; border-radius: 12px; border: 1px solid var(--border); width: 100%; max-width: 320px; text-align: center; }
         .modal-box input { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); margin: 15px 0; outline: none; }
 
-        /* UI ELEMENTS */
         .main-container { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 260px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; transition: 0.3s; }
+        .sidebar { width: 260px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
         .main-content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 180px; }
         .song-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
         .song-row.active { border-left: 3px solid var(--green); background: rgba(29,185,84,0.05); }
 
         footer { background: var(--surface); border-top: 1px solid var(--border); padding: 15px 20px; position: fixed; bottom: 0; width: 100%; height: 140px; }
         .btn-slim { padding: 10px 15px; border-radius: 6px; border: 1px solid var(--green); color: var(--green); background: transparent; font-size: 11px; font-weight: 600; cursor: pointer; text-transform: uppercase; }
-        
-        input[type="range"] { accent-color: var(--green); width: 100%; height: 4px; cursor: pointer; }
-
-        @media (max-width: 768px) { .sidebar { display: none; } .player-controls { grid-template-columns: 1fr 1fr; } }
+        input[type="range"] { accent-color: var(--green); width: 100%; height: 4px; }
+        @media (max-width: 768px) { .sidebar { display: none; } }
     </style>
 </head>
 <body class="dark-theme">
 
     <div id="modal-pix" class="modal-overlay" onclick="closeModals()">
         <div class="modal-box" onclick="event.stopPropagation()">
-            <h3 style="margin:0">APOIAR GIGMASTER</h3>
+            <h3 style="margin:0; font-weight:400">APOIAR GIGMASTER</h3>
             <img src="pix.jpg" style="width:100%; border-radius:8px; margin:20px 0;">
             <button class="btn-slim" onclick="closeModals()" style="width:100%">FECHAR</button>
         </div>
@@ -59,8 +53,8 @@
 
     <div id="modal-nick" class="modal-overlay">
         <div class="modal-box">
-            <h3 style="margin:0">ALTERAR NICKNAME</h3>
-            <input type="text" id="new-nick" placeholder="Novo nome de usuário">
+            <h3 style="margin:0; font-weight:400">NICKNAME</h3>
+            <input type="text" id="new-nick" placeholder="Digite seu novo Nick">
             <div style="display:flex; gap:10px;">
                 <button class="btn-slim" onclick="closeModals()" style="flex:1; border-color:var(--sub); color:var(--sub)">CANCELAR</button>
                 <button class="btn-slim" onclick="updateNick()" style="flex:1; background:var(--green); color:#000; border:none;">SALVAR</button>
@@ -70,7 +64,7 @@
 
     <div id="auth-screen" style="position:fixed; inset:0; background:var(--bg); z-index:2000; display:flex; align-items:center; justify-content:center; padding:20px;">
         <div style="background:var(--surface); padding:40px; border-radius:15px; border:1px solid var(--border); text-align:center; width:100%; max-width:320px;">
-            <h2 style="letter-spacing:4px; margin-bottom:30px;">GIGMASTER</h2>
+            <h2 style="letter-spacing:4px; margin-bottom:30px; font-weight:300">GIGMASTER</h2>
             <input type="email" id="auth-email" placeholder="E-mail" style="width:100%; padding:12px; margin-bottom:10px; border-radius:6px; border:1px solid var(--border); background:#1a1a1a; color:#fff;">
             <input type="password" id="auth-pass" placeholder="Senha" style="width:100%; padding:12px; margin-bottom:20px; border-radius:6px; border:1px solid var(--border); background:#1a1a1a; color:#fff;">
             <button class="btn-slim" onclick="auth('in')" style="width:100%; background:var(--green); color:#000; border:none; margin-bottom:10px;">LOGAR</button>
@@ -82,7 +76,7 @@
         <header>
             <div style="font-weight:600; letter-spacing:1px; font-size:14px;">GIGMASTER <span style="color:var(--green)">PRO</span></div>
             <div class="user-menu-container">
-                <div class="user-badge" id="user-display" onclick="toggleMenu(event)">CARREGANDO...</div>
+                <div class="user-badge" id="user-display" onclick="toggleMenu(event)">PERFIL ▼</div>
                 <div class="dropdown" id="user-dropdown">
                     <div onclick="toggleTheme()">🌓 ALTERAR TEMA</div>
                     <div onclick="openNickModal()">👤 MUDAR NICKNAME</div>
@@ -114,7 +108,7 @@
                     <div style="display:flex; align-items:center; gap:10px;">
                         <input type="range" id="p-slide" min="-7" max="7" value="0" style="width:50px">
                         <b id="p-val" style="font-size:12px;">0</b>
-                        <svg onclick="saveP()" viewBox="0 0 24 24" width="16" fill="var(--green)" style="cursor:pointer;"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                        <svg onclick="saveP()" viewBox="0 0 24 24" width="16" fill="var(--green)" style="cursor:pointer;"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 i1.34 3 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
                     </div>
                     <button id="play-btn" style="width:50px; height:50px; border-radius:50%; background:#fff; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                         <svg id="svg-play" viewBox="0 0 24 24" width="20"><path d="M8 5v14l11-7z"/></svg>
@@ -139,16 +133,13 @@
 
         let curPl = null, curSId = null;
 
-        // --- MENU LOGIC ---
         function toggleMenu(e) { e.stopPropagation(); const d = document.getElementById('user-dropdown'); d.style.display = (d.style.display === 'block') ? 'none' : 'block'; }
         window.onclick = () => { document.getElementById('user-dropdown').style.display = 'none'; };
-
         function toggleTheme() { document.body.classList.toggle('light-theme'); }
         function openPixModal() { document.getElementById('modal-pix').style.display = 'flex'; }
         function openNickModal() { document.getElementById('modal-nick').style.display = 'flex'; }
         function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); }
 
-        // --- AUTH & NICKNAME ---
         async function auth(type) {
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-pass').value;
@@ -161,8 +152,12 @@
             if(session) {
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('app').style.display = 'flex';
+                
+                // Busca Nickname persistido no banco
                 const { data: profile } = await sb.from('profiles').select('username').eq('id', session.user.id).single();
-                document.getElementById('user-display').innerText = (profile?.username || session.user.email.split('@')[0]).toUpperCase();
+                const displayName = profile?.username || session.user.email.split('@')[0];
+                document.getElementById('user-display').innerText = displayName.toUpperCase() + ' ▼';
+                
                 loadPl();
             }
         }
@@ -171,14 +166,19 @@
             const newName = document.getElementById('new-nick').value;
             if(!newName) return;
             const { data: { user } } = await sb.auth.getUser();
-            await sb.from('profiles').upsert({ id: user.id, username: newName });
-            document.getElementById('user-display').innerText = newName.toUpperCase();
-            closeModals();
+            
+            // Upsert: Salva definitivamente no Supabase
+            const { error } = await sb.from('profiles').upsert({ id: user.id, username: newName });
+            if(!error) {
+                document.getElementById('user-display').innerText = newName.toUpperCase() + ' ▼';
+                closeModals();
+            } else {
+                alert("Erro ao salvar. Verifique se a tabela 'profiles' existe.");
+            }
         }
 
         function logout() { sb.auth.signOut(); location.reload(); }
 
-        // --- APP LOGIC ---
         async function loadPl() {
             const { data: { user } } = await sb.auth.getUser();
             const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
@@ -186,7 +186,6 @@
         }
 
         function addFolder() { const n = prompt("Nome da Pasta:"); if(n) { sb.auth.getUser().then(({data}) => sb.from('playlists').insert({nome:n, user_id:data.user.id}).then(loadPl)); } }
-
         function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; document.getElementById('btn-up').style.display = 'block'; loadSongs(); }
 
         async function loadSongs() {
