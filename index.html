@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GIGMASTER PRO | v29.3</title>
+<title>GIGMASTER PRO | v29.4</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,19 +17,16 @@ body.light{--green:#e91e63;--bg:#e0e0e0;--surface:#f5f5f5;--border:#ccc;--text:#
 *{box-sizing:border-box}
 body{margin:0;font-family:Inter,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
 
-/* LOGIN */
 #auth{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:9999}
 .auth-box{width:320px;text-align:center}
 .auth-box input{width:100%;padding:14px;margin-bottom:10px;border-radius:10px;background:#111;border:1px solid #333;color:#fff}
 
-/* APP */
 #app{display:none;flex-direction:column;height:100vh}
 header{height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--border)}
 
 .u-badge{background:var(--border);padding:6px 14px;border-radius:20px;font-size:11px;cursor:pointer;position:relative}
 .drop-menu{display:none;position:absolute;top:45px;right:0;width:200px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;z-index:600}
 .drop-menu div{padding:14px 18px;font-size:11px;border-bottom:1px solid var(--border);cursor:pointer}
-.drop-menu div:hover{background:rgba(255,255,255,.05)}
 
 main{flex:1;display:flex;overflow:hidden}
 aside{width:280px;border-right:1px solid var(--border);padding:15px;overflow-y:auto}
@@ -47,9 +44,9 @@ button{cursor:pointer;border:none;border-radius:10px}
 footer{height:140px;border-top:1px solid var(--border);padding:15px;background:var(--surface)}
 .controls{display:flex;justify-content:center;gap:20px;margin-top:10px}
 .slider-box{display:flex;align-items:center;gap:8px;font-size:12px}
+input[type=range]{accent-color:var(--green)}
 
 #toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--green);padding:10px 20px;border-radius:20px;display:none;z-index:99999}
-
 @media(max-width:768px){aside{display:none}}
 </style>
 </head>
@@ -58,7 +55,6 @@ footer{height:140px;border-top:1px solid var(--border);padding:15px;background:v
 
 <div id="toast"></div>
 
-<!-- LOGIN -->
 <div id="auth">
   <div class="auth-box">
     <h2 style="color:var(--green);letter-spacing:4px">GIGMASTER</h2>
@@ -70,18 +66,14 @@ footer{height:140px;border-top:1px solid var(--border);padding:15px;background:v
   </div>
 </div>
 
-<!-- APP -->
 <div id="app">
-
 <header>
   <div>GIGMASTER <span style="color:var(--green)">PRO</span></div>
-
   <div class="u-badge" onclick="toggleMenu()">
     <span id="u-display">PERFIL</span> ▼
     <div class="drop-menu" id="u-drop">
       <div onclick="toggleTheme()">🌓 TEMA</div>
-      <div onclick="alert('Bug enviado!')">🐞 RELATAR BUG</div>
-      <div onclick="alert('PIX: em breve')">💎 APOIAR PIX</div>
+      <div onclick="alert('Bug relatado!')">🐞 BUG</div>
       <div onclick="logout()" style="color:#ff4d4d">🚪 SAIR</div>
     </div>
   </div>
@@ -89,10 +81,9 @@ footer{height:140px;border-top:1px solid var(--border);padding:15px;background:v
 
 <main>
 <aside>
-  <button class="btn" onclick="addPlaylist()">+ NOVA PLAYLIST</button>
+  <button class="btn" onclick="addPlaylist()">+ NOVA PASTA</button>
   <div id="playlist-container"></div>
 </aside>
-
 <section>
   <h2 id="pl-title">Biblioteca</h2>
   <input type="file" id="upload" hidden accept="audio/mp3">
@@ -110,85 +101,60 @@ footer{height:140px;border-top:1px solid var(--border);padding:15px;background:v
     <input id="p-slide" type="range" min="-7" max="7" value="0">
     <b id="p-val">0</b>
   </div>
-  <button id="play-btn" onclick="togglePlay()" style="width:50px;height:50px;border-radius:50%;background:#fff;color:#000">▶</button>
+  <button id="play-btn" onclick="togglePlay()" style="width:50px;height:50px;border-radius:50%;background:#fff;color:#000;font-size:20px">▶</button>
   <div class="slider-box">
     <span>VOL</span>
     <input id="v-slide" type="range" min="-40" max="6" value="0">
   </div>
 </div>
 </footer>
-
 </div>
 
 <script>
-const sb = supabase.createClient(
-  "https://mdtqwugkaonipbfqqvhj.supabase.co",
-  "sb_publishable_ercRd8vFjpnVyXf0WiPVSw_tWCSmsGm"
-);
+const sb = supabase.createClient("https://mdtqwugkaonipbfqqvhj.supabase.co", "sb_publishable_ercRd8vFjpnVyXf0WiPVSw_tWCSmsGm");
+
+/* AUDIO ENGINE */
+const player=new Tone.Player();
+const pitchNode=new Tone.PitchShift(0).toDestination();
+let offset=0, lastStart=0, dragging=false, curPl=null;
+
+function routeAudio(p){
+    player.disconnect();
+    p==0 ? player.toDestination() : (pitchNode.pitch=p, player.connect(pitchNode));
+}
 
 /* AUTH */
 async function handleAuth(type){
-  const email=document.getElementById("email").value;
-  const pass=document.getElementById("pass").value;
-
-  const {error}= type==="in"
-    ? await sb.auth.signInWithPassword({email,password:pass})
-    : await sb.auth.signUp({email,password:pass});
-
+  const email=document.getElementById("email").value, pass=document.getElementById("pass").value;
+  const {error} = type==="in" ? await sb.auth.signInWithPassword({email,password:pass}) : await sb.auth.signUp({email,password:pass});
   if(error) alert(error.message);
 }
 
 async function loginGoogle(){
-  await sb.auth.signInWithOAuth({ provider:"google" });
+  await sb.auth.signInWithOAuth({ 
+    provider:"google", 
+    options: { redirectTo: window.location.origin + window.location.pathname }
+  });
 }
 
-async function logout(){
-  await sb.auth.signOut();
-  document.getElementById("app").style.display="none";
-  document.getElementById("auth").style.display="flex";
-}
+async function logout(){ await sb.auth.signOut(); location.reload(); }
 
-/* SESSION */
 sb.auth.onAuthStateChange((e,session)=>{
-  const auth=document.getElementById("auth");
-  const app=document.getElementById("app");
-  const u=document.getElementById("u-display");
-  document.getElementById("u-drop").style.display="none";
-
+  const auth=document.getElementById("auth"), app=document.getElementById("app"), u=document.getElementById("u-display");
   if(session){
-    auth.style.display="none";
-    app.style.display="flex";
+    auth.style.display="none"; app.style.display="flex";
     u.innerText=session.user.email.split("@")[0].toUpperCase();
     loadPlaylists();
-  }else{
-    auth.style.display="flex";
-    app.style.display="none";
-  }
+  } else { auth.style.display="flex"; app.style.display="none"; }
 });
 
-/* UI */
-function toggleMenu(){
-  const m=document.getElementById("u-drop");
-  m.style.display=m.style.display==="block"?"none":"block";
-}
-function toggleTheme(){document.body.classList.toggle("light")}
-function toast(t){const x=document.getElementById("toast");x.innerText=t;x.style.display="block";setTimeout(()=>x.style.display="none",2000)}
-
-/* AUDIO */
-const player=new Tone.Player();
-const pitch=new Tone.PitchShift(0).toDestination();
-let offset=0,lastStart=0,drag=false;
-
-function route(p){
-  player.disconnect();
-  p==0?player.toDestination():(pitch.pitch=p,player.connect(pitch));
-}
-
+/* PLAYBACK */
 async function playSong(url,t,p){
+  document.getElementById("now").innerText="CARREGANDO...";
   player.stop();
-  const r=await fetch(url);
-  player.buffer=await new Tone.ToneAudioBuffer().load(URL.createObjectURL(await r.blob()));
-  route(p);offset=0;lastStart=Tone.now();
+  const res=await fetch(url);
+  player.buffer=await new Tone.ToneAudioBuffer().load(URL.createObjectURL(await res.blob()));
+  routeAudio(p); offset=0; lastStart=Tone.now();
   document.getElementById("p-slide").value=p;
   document.getElementById("p-val").innerText=p;
   document.getElementById("seek").max=player.buffer.duration;
@@ -201,52 +167,84 @@ function togglePlay(){
   if(!player.buffer?.loaded)return;
   Tone.start();
   if(player.state==="started"){
-    offset+=Tone.now()-lastStart;player.stop();
-    playBtn.innerText="▶";
+    offset+=Tone.now()-lastStart; player.stop();
+    document.getElementById("play-btn").innerText="▶";
   }else{
-    lastStart=Tone.now();player.start(0,offset);
-    playBtn.innerText="❚❚";
+    lastStart=Tone.now(); player.start(0,offset);
+    document.getElementById("play-btn").innerText="❚❚";
   }
 }
 
-/* PLAYLISTS */
-let curPl=null;
+/* SEEK & CONTROLS */
+const sk=document.getElementById("seek");
+sk.onmousedown = sk.ontouchstart = () => dragging=true;
+sk.onchange = e => {
+    dragging=false; offset=parseFloat(e.target.value);
+    if(player.state==="started"){ lastStart=Tone.now(); player.start(0, offset); }
+};
+setInterval(()=>{ if(player.state==="started" && !dragging) sk.value=offset+(Tone.now()-lastStart); }, 100);
 
+document.getElementById("p-slide").oninput = e => { routeAudio(parseInt(e.target.value)); document.getElementById("p-val").innerText=e.target.value; };
+document.getElementById("v-slide").oninput = e => Tone.Destination.volume.value = e.target.value;
+
+/* GESTÃO */
 async function loadPlaylists(){
   const {data:{user}}=await sb.auth.getUser();
-  const {data}=await sb.from("playlists").select("*").eq("user_id",user.id);
-  playlist_container.innerHTML=(data||[]).map(p=>`
+  const {data}=await sb.from("playlists").select("*").eq("user_id",user.id).order("nome");
+  document.getElementById("playlist-container").innerHTML=(data||[]).map(p=>`
     <div class="playlist ${curPl==p.id?'active':''}" onclick="selectPlaylist(${p.id},'${p.nome}')">
-      ${p.nome.toUpperCase()}
+      <b>${p.nome.toUpperCase()}</b>
+      <div class="pl-tools">
+        <span onclick="event.stopPropagation(); downloadZip(${p.id},'${p.nome}')">📦 ZIP</span>
+        <span onclick="event.stopPropagation(); deletePlaylist(${p.id})">🗑️ EXCLUIR</span>
+      </div>
     </div>`).join("");
 }
 
-async function selectPlaylist(id,n){
-  curPl=id;pl-title.innerText=n;btn-up.style.display="block";loadSongs();
-}
+async function selectPlaylist(id,n){ curPl=id; document.getElementById("pl-title").innerText=n; document.getElementById("btn-up").style.display="block"; loadSongs(); loadPlaylists(); }
 
 async function loadSongs(){
-  const {data}=await sb.from("musicas").select("*").eq("playlist_id",curPl);
-  songs_container.innerHTML=(data||[]).map(s=>`
+  const {data}=await sb.from("musicas").select("*").eq("playlist_id",curPl).order("titulo");
+  document.getElementById("songs-container").innerHTML=(data||[]).map(s=>`
     <div class="song" onclick="playSong('${s.audio_url}','${s.titulo}',${s.pitch})">
       <span>${s.titulo}</span>
+      <small onclick="event.stopPropagation(); deleteSong(${s.id})" style="opacity:.4">✕</small>
     </div>`).join("");
+}
+
+async function downloadZip(id, name) {
+    toast("📦 Gerando ZIP...");
+    const { data } = await sb.from('musicas').select('*').eq('playlist_id', id);
+    const zip = new JSZip();
+    for (const s of data) {
+        const res = await fetch(s.audio_url);
+        zip.file(s.titulo, await res.blob());
+    }
+    const content = await zip.generateAsync({type:"blob"});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(content); a.download = `${name}.zip`; a.click();
 }
 
 async function addPlaylist(){
-  const n=prompt("Nome da playlist");if(!n)return;
+  const n=prompt("Nome da pasta:"); if(!n)return;
   const {data:{user}}=await sb.auth.getUser();
-  await sb.from("playlists").insert([{nome:n,user_id:user.id}]);
-  loadPlaylists();
+  await sb.from("playlists").insert([{nome:n,user_id:user.id}]); loadPlaylists();
 }
 
+async function deletePlaylist(id){ if(confirm("Apagar pasta?")) { await sb.from("musicas").delete().eq("playlist_id",id); await sb.from("playlists").delete().eq("id",id); loadPlaylists(); } }
+async function deleteSong(id){ await sb.from("musicas").delete().eq("id",id); loadSongs(); }
+
+function toggleMenu(){ const m=document.getElementById("u-drop"); m.style.display=m.style.display==="block"?"none":"block"; }
+function toggleTheme(){ document.body.classList.toggle("light") }
+function toast(t){ const x=document.getElementById("toast"); x.innerText=t; x.style.display="block"; setTimeout(()=>x.style.display="none",2000) }
+
 upload.onchange=async e=>{
-  const f=e.target.files[0];if(!f)return;
+  const f=e.target.files[0]; if(!f)return;
+  toast("⏳ Enviando...");
   const path=`audios/${Date.now()}_${f.name}`;
   await sb.storage.from("audios").upload(path,f);
   const {data:{publicUrl}}=sb.storage.from("audios").getPublicUrl(path);
   await sb.from("musicas").insert([{titulo:f.name,audio_url:publicUrl,playlist_id:curPl,pitch:0}]);
-  loadSongs();toast("Upload concluído");
+  loadSongs(); toast("Pronto!");
 };
 </script>
 </body>
