@@ -3,137 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GIGMASTER PRO | v19.0</title>
+    <title>GIGMASTER PRO | v19.5</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     
     <style>
-        :root { 
-            --green: #1db954; --bg: #080808; --surface: #111; --border: rgba(255,255,255,0.08); --text: #d1d1d1; --red: #ff4d4d;
-        }
-        /* Tema Claro */
-        body.light-theme {
-            --bg: #f5f5f5; --surface: #fff; --border: rgba(0,0,0,0.1); --text: #222;
-        }
+        :root { --green: #1db954; --bg: #000; --surface: #121212; --border: #282828; --text: #fff; }
+        body.light-theme { --bg: #f5f5f5; --surface: #fff; --border: #ddd; --text: #111; }
 
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; transition: 0.3s; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: 0.2s; }
 
         /* Login */
-        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 15px; }
-        
-        /* Menu Usuário */
-        .user-menu { position: relative; cursor: pointer; }
-        .dropdown { position: absolute; top: 100%; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; display: none; width: 180px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .dropdown div { padding: 12px; font-size: 11px; letter-spacing: 1px; border-bottom: 1px solid var(--border); }
+        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 15px; padding: 20px; }
+        .auth-card { background: var(--surface); padding: 30px; border-radius: 12px; width: 100%; max-width: 320px; border: 1px solid var(--border); text-align: center; }
+        .auth-card input { width: 100%; padding: 12px; margin-bottom: 10px; background: #1a1a1a; border: 1px solid var(--border); border-radius: 6px; color: #fff; box-sizing: border-box; }
+
+        /* Header & Nav */
+        header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); z-index: 100; }
+        .user-drop { position: relative; cursor: pointer; font-size: 12px; font-weight: 600; }
+        .dropdown { position: absolute; top: 100%; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; display: none; width: 180px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); margin-top: 10px; }
+        .dropdown div { padding: 12px; border-bottom: 1px solid var(--border); }
         .dropdown div:hover { background: var(--green); color: #000; }
 
-        /* Modal Pix */
-        #pix-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; align-items:center; justify-content:center; }
-        .modal-content { background:var(--surface); padding:30px; border-radius:8px; text-align:center; max-width:300px; }
-        .modal-content img { width: 100%; border-radius: 4px; margin: 15px 0; }
-
-        /* Estilo Geral */
+        /* Layout Principal */
         .main-container { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 240px; border-right: 1px solid var(--border); padding: 30px; background: var(--bg); }
-        .main-content { flex: 1; padding: 40px; overflow-y: auto; padding-bottom: 140px; }
+        .sidebar { width: 260px; border-right: 1px solid var(--border); padding: 20px; background: var(--bg); overflow-y: auto; }
+        .main-content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 180px; }
 
-        .song-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
-        .song-row.active { color: var(--green); }
+        /* Responsividade Mobile */
+        @media (max-width: 768px) {
+            .sidebar { display: none; } /* Opcional: criar menu hamburguer depois */
+            .main-content { padding: 15px; }
+            .player-grid { grid-template-columns: 1fr !important; gap: 15px !important; }
+            .vol-area { display: none; } /* Esconder volume no mobile para caber tudo */
+        }
+
+        /* Song List */
+        .song-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 10px; border-bottom: 1px solid var(--border); }
+        .song-row.active { border-left: 3px solid var(--green); background: rgba(29, 185, 84, 0.05); }
+
+        /* Player Footer */
+        footer { background: var(--surface); border-top: 1px solid var(--border); padding: 20px; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
+        .player-grid { display: grid; grid-template-columns: 150px 1fr 150px; align-items: center; gap: 30px; max-width: 1200px; margin: 0 auto; }
         
-        .btn-slim { background: transparent; border: 1px solid var(--green); color: var(--green); padding: 8px 20px; border-radius: 2px; cursor: pointer; font-size: 10px; letter-spacing: 1px; }
-        .play-circle { width: 45px; height: 45px; border: 1px solid var(--text); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; background:none; }
+        .play-btn { width: 50px; height: 50px; border-radius: 50%; background: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .play-btn svg { fill: #000; width: 20px; }
         
-        input[type="range"] { -webkit-appearance: none; background: #333; height: 1px; outline:none; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: var(--green); }
-        
-        .icon-small { fill: currentColor; cursor: pointer; opacity: 0.6; transition: 0.2s; }
-        .icon-small:hover { opacity: 1; }
+        input[type="range"] { accent-color: var(--green); width: 100%; }
+
+        /* Modal Pix */
+        #pix-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; align-items:center; justify-content:center; }
+        .modal-content { background:var(--surface); padding:20px; border-radius:12px; text-align:center; width:280px; }
+
+        .btn-slim { padding: 10px 18px; border-radius: 4px; border: 1px solid var(--green); color: var(--green); background: transparent; cursor: pointer; font-size: 11px; font-weight: 600; }
+        .btn-green { background: var(--green); color: #000; border: none; }
     </style>
 </head>
 <body class="dark-theme">
 
     <div id="auth-screen">
-        <div style="font-weight:200; font-size:2rem; letter-spacing:4px;">GIG<span>MASTER</span></div>
-        <input type="email" id="email" placeholder="Email">
-        <input type="password" id="pass" placeholder="Senha">
-        <div style="display:flex; gap:10px;">
-            <button class="btn-slim" onclick="login('in')">ENTRAR</button>
-            <button class="btn-slim" style="border-color:#555; color:#aaa" onclick="login('up')">CRIAR CONTA</button>
+        <div class="auth-card">
+            <h2 style="margin-top:0">GIGMASTER</h2>
+            <input type="email" id="email" placeholder="Seu e-mail">
+            <input type="password" id="pass" placeholder="Sua senha">
+            <button class="btn-slim btn-green" style="width:100%; margin-bottom:10px;" onclick="login('in')">LOGAR</button>
+            <button class="btn-slim" style="width:100%; border-color:#555; color:#888" onclick="login('up')">CRIAR CONTA</button>
+            <p id="msg" style="font-size:11px; color:var(--green); margin-top:15px;"></p>
         </div>
-        <p id="msg" style="font-size:10px; color:var(--green)"></p>
     </div>
 
     <div id="pix-modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <div style="font-size:12px; letter-spacing:2px;">APOIE O PROJETO</div>
-            <img src="pix.jpg" alt="QR Code Pix">
+            <b>APOIE O PROJETO</b><br><br>
+            <img src="pix.jpg" style="width:100%; border-radius:8px;">
+            <br><br>
             <button class="btn-slim" onclick="document.getElementById('pix-modal').style.display='none'">FECHAR</button>
         </div>
     </div>
 
-    <div id="app" style="display:none; flex-direction:column; height:100vh;">
+    <div id="app" style="display:none;">
         <header>
-            <div style="font-weight:200; font-size:14px; letter-spacing:2px;">GIGMASTER <span style="font-weight:600; color:var(--green)">PRO</span></div>
-            <div class="user-menu" onclick="toggleDropdown()">
-                <span id="user-email" style="font-size:11px; opacity:0.7">PERFIL ▼</span>
-                <div class="dropdown" id="user-dropdown">
+            <b style="font-size:14px; letter-spacing:1px;">GIGMASTER <span style="color:var(--green)">PRO</span></b>
+            <div class="user-drop" onclick="toggleDrop()">
+                <span id="user-display">PERFIL ▼</span>
+                <div class="dropdown" id="dropdown">
                     <div onclick="toggleTheme()">🌓 ALTERAR TEMA</div>
-                    <div onclick="document.getElementById('pix-modal').style.display='flex'">💎 FAZER DOAÇÃO</div>
-                    <div onclick="logout()" style="color:var(--red)">🚪 SAIR</div>
+                    <div onclick="document.getElementById('pix-modal').style.display='flex'">💎 DOAÇÃO PIX</div>
+                    <div onclick="logout()" style="color:#ff4d4d">🚪 SAIR</div>
                 </div>
             </div>
         </header>
 
         <div class="main-container">
             <div class="sidebar">
-                <div style="font-size:10px; color:#666; letter-spacing:2px; margin-bottom:20px;">BIBLIOTECA</div>
-                <div id="pl-list"></div>
-                <button onclick="addPl()" style="background:none; border:none; color:var(--green); font-size:10px; cursor:pointer; margin-top:20px;">+ NOVA PASTA</button>
+                <button class="btn-slim" style="width:100%" onclick="addPl()">+ NOVA PASTA</button>
+                <div id="pl-list" style="margin-top:20px;"></div>
             </div>
-            
             <div class="main-content">
-                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:40px;">
-                    <div>
-                        <h1 id="pl-title" style="font-weight:200; margin:0">Selecione uma Pasta</h1>
-                        <button id="btn-zip" class="btn-slim" style="display:none; margin-top:10px; border-color:#555; color:#888" onclick="downloadZip()">BAIXAR PLAYLIST (.ZIP)</button>
-                    </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2 id="pl-title" style="margin:0; font-size:1.5rem">Biblioteca</h2>
                     <label class="btn-slim" id="btn-up" style="display:none;">UPLOAD MP3 <input type="file" id="up-mp3" hidden></label>
                 </div>
+                <button id="btn-zip" class="btn-slim" style="display:none; margin-bottom:20px; width:100%" onclick="downloadZip()">BAIXAR PASTA (.ZIP)</button>
                 <div id="song-list"></div>
             </div>
         </div>
 
         <footer>
-            <div style="display: grid; grid-template-columns: 1fr 2fr 1fr; align-items: center; max-width: 1400px; margin: 0 auto; width: 100%;">
+            <div class="player-grid">
+                <div>
+                    <small style="color:#666; font-size:9px;">PITCH</small>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <input type="range" id="p-slide" min="-7" max="7" value="0" style="width:60px">
+                        <b id="p-val" style="color:var(--green); width:15px">0</b>
+                        <svg onclick="savePitch()" viewBox="0 0 24 24" width="16" style="fill:var(--green); cursor:pointer;"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                    </div>
+                </div>
+
                 <div style="display:flex; align-items:center; gap:15px;">
-                    <div>
-                        <div style="font-size:8px; color:#666; margin-bottom:4px;">PITCH</div>
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <input type="range" id="p-slide" min="-7" max="7" value="0" style="width:60px">
-                            <b id="p-val" style="font-size:12px; color:var(--green); width:15px;">0</b>
-                            <svg onclick="savePitch()" class="icon-small" viewBox="0 0 24 24" width="14"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display:flex; align-items:center; gap:30px;">
-                    <button id="play-btn" class="play-circle">
-                        <svg id="svg-play" viewBox="0 0 24 24" width="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    <button id="play-btn" class="play-btn">
+                        <svg id="svg-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                     </button>
-                    <div style="flex:1; text-align:center;">
-                        <div id="now-playing" style="font-size:9px; color:#666; margin-bottom:8px; text-transform:uppercase;">Station Off</div>
-                        <input type="range" id="seek-slide" value="0" step="0.1" style="width:100%">
+                    <div style="flex:1;">
+                        <div id="now-playing" style="font-size:10px; color:#888; margin-bottom:5px; text-align:center;">Selecione uma faixa</div>
+                        <input type="range" id="seek-slide" value="0" step="0.1">
                     </div>
                 </div>
 
-                <div style="display:flex; align-items:center; justify-content:flex-end; gap:15px;">
+                <div class="vol-area" style="display:flex; align-items:center; justify-content:flex-end; gap:10px;">
                     <svg viewBox="0 0 24 24" width="14" fill="#666"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-                    <input type="range" id="v-slide" min="-40" max="6" value="0" style="width:80px">
+                    <input type="range" id="v-slide" min="-40" max="6" value="0" style="width:70px">
                 </div>
             </div>
         </footer>
@@ -150,76 +153,35 @@
 
         let curPl = null, curSongId = null, allSongs = [];
 
-        // --- AUTH ---
+        // Auth
         async function login(type) {
             const email = document.getElementById('email').value, password = document.getElementById('pass').value;
-            const { data, error } = type === 'in' 
-                ? await sb.auth.signInWithPassword({ email, password })
-                : await sb.auth.signUp({ email, password });
-            
+            const { data, error } = type === 'in' ? await sb.auth.signInWithPassword({ email, password }) : await sb.auth.signUp({ email, password });
             if(error) alert(error.message);
-            else if(type === 'up') document.getElementById('msg').innerText = "Conta criada! Faça login.";
+            else if(type === 'up') document.getElementById('msg').innerText = "Conta criada com sucesso!";
             else check();
         }
-
         async function check() {
             const { data: { session } } = await sb.auth.getSession();
-            if(session) {
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('app').style.display = 'flex';
-                document.getElementById('user-email').innerText = session.user.email.split('@')[0].toUpperCase() + ' ▼';
-                loadPl();
-            }
+            if(session) { document.getElementById('auth-screen').style.display = 'none'; document.getElementById('app').style.display = 'flex'; document.getElementById('user-display').innerText = session.user.email.split('@')[0].toUpperCase() + ' ▼'; loadPl(); }
         }
-
         function logout() { sb.auth.signOut(); location.reload(); }
 
-        // --- MENU & TEMA ---
-        function toggleDropdown() { 
-            const d = document.getElementById('user-dropdown');
-            d.style.display = d.style.display === 'block' ? 'none' : 'block';
-        }
+        // Interface
+        function toggleDrop() { const d = document.getElementById('dropdown'); d.style.display = d.style.display === 'block' ? 'none' : 'block'; }
+        function toggleTheme() { document.body.classList.toggle('light-theme'); }
 
-        function toggleTheme() {
-            document.body.classList.toggle('light-theme');
-            localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
-        }
-
-        // --- PLAYLISTS & ZIP ---
         async function loadPl() {
             const { data: { user } } = await sb.auth.getUser();
             const { data } = await sb.from('playlists').select('*').eq('user_id', user.id);
-            document.getElementById('pl-list').innerHTML = data.map(p => `
-                <div class="pl-item ${curPl==p.id?'active':''}" onclick="selPl(${p.id},'${p.nome}')" style="display:flex; justify-content:space-between; padding:8px 0; cursor:pointer; font-size:12px">
-                    <span>${p.nome.toUpperCase()}</span>
-                    <span onclick="event.stopPropagation(); delPl(${p.id})">✕</span>
-                </div>`).join('');
+            document.getElementById('pl-list').innerHTML = data.map(p => `<div onclick="selPl(${p.id},'${p.nome}')" style="cursor:pointer; padding:10px; font-size:13px; border-radius:6px; margin-bottom:5px; background:rgba(255,255,255,0.03)" class="${curPl==p.id?'active-song':''}">📂 ${p.nome.toUpperCase()}</div>`).join('');
         }
-
-        async function downloadZip() {
-            const btn = document.getElementById('btn-zip');
-            btn.innerText = "PREPARANDO ZIP...";
-            const zip = new JSZip();
-            
-            for (let s of allSongs) {
-                const resp = await fetch(s.audio_url);
-                const blob = await resp.blob();
-                zip.file(`${s.titulo}.mp3`, blob);
-            }
-            
-            const content = await zip.generateAsync({type:"blob"});
-            saveAs(content, `playlist_${document.getElementById('pl-title').innerText}.zip`);
-            btn.innerText = "BAIXAR PLAYLIST (.ZIP)";
+        async function addPl() {
+            const n = prompt("Nome da Pasta:"); if(!n) return;
+            const { data: { user } } = await sb.auth.getUser();
+            await sb.from('playlists').insert({ nome: n, user_id: user.id }); loadPl();
         }
-
-        // --- MÚSICAS & DOWNLOAD INDIVIDUAL ---
-        async function selPl(id, n) { 
-            curPl = id; 
-            document.getElementById('pl-title').innerText = n;
-            document.getElementById('btn-up').style.display = 'block';
-            document.getElementById('btn-zip').style.display = 'block';
-            loadSongs(); 
-        }
+        function selPl(id, n) { curPl = id; document.getElementById('pl-title').innerText = n; document.getElementById('btn-up').style.display = 'block'; document.getElementById('btn-zip').style.display = 'block'; loadSongs(); loadPl(); }
 
         async function loadSongs() {
             const { data } = await sb.from('musicas').select('*').eq('playlist_id', curPl).order('titulo');
@@ -227,48 +189,17 @@
             document.getElementById('song-list').innerHTML = data.map(s => `
                 <div class="song-row ${curSongId === s.id ? 'active' : ''}">
                     <div onclick="playSong('${s.audio_url}', ${s.pitch}, '${s.titulo}', ${s.id})" style="flex:1; cursor:pointer">
-                        <span style="font-size:14px">${s.titulo}</span>
-                        <small style="margin-left:10px; opacity:0.5; font-size:10px">${s.pitch} ST</small>
+                        <b>${s.titulo}</b> <small style="margin-left:10px; opacity:0.5">${s.pitch} ST</small>
                     </div>
                     <div style="display:flex; gap:15px; align-items:center">
-                        <svg onclick="downloadModified('${s.audio_url}', ${s.pitch}, '${s.titulo}')" class="icon-small" viewBox="0 0 24 24" width="16"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                        <span onclick="delSong(${s.id})" style="cursor:pointer; opacity:0.5">✕</span>
+                        <svg onclick="downloadModified('${s.audio_url}', ${s.pitch}, '${s.titulo}')" viewBox="0 0 24 24" width="16" style="fill:#666; cursor:pointer"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        <span onclick="delSong(${s.id})" style="cursor:pointer; opacity:0.4">✕</span>
                     </div>
                 </div>`).join('');
         }
 
-        async function downloadModified(url, pitch, titulo) {
-            alert("Processando áudio com Pitch... Aguarde.");
-            const buffer = await (await fetch(url)).arrayBuffer();
-            const audioBuffer = await Tone.getContext().rawContext.decodeAudioData(buffer);
-            
-            // Offline Render para aplicar o Pitch Shift no arquivo
-            const rendered = await Tone.Offline(() => {
-                const p = new Tone.Player(audioBuffer).toDestination();
-                const s = new Tone.PitchShift(pitch).toDestination();
-                p.connect(s);
-                p.start(0);
-            }, audioBuffer.duration);
-
-            const wav = audioBufferToWav(rendered);
-            const blob = new Blob([wav], { type: 'audio/wav' });
-            saveAs(blob, `${titulo}_pitch_${pitch}.wav`);
-        }
-
-        // Auxiliar para converter AudioBuffer em WAV
-        function audioBufferToWav(buffer) {
-            let numOfChan = buffer.numberOfChannels, length = buffer.length * numOfChan * 2 + 44, bufferArr = new ArrayBuffer(length), view = new DataView(bufferArr), channels = [], i, sample, offset = 0, pos = 0;
-            function setUint32(d) { view.setUint32(pos, d, true); pos += 4; }
-            function setUint16(d) { view.setUint16(pos, d, true); pos += 2; }
-            setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157); setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan); setUint32(buffer.sampleRate); setUint32(buffer.sampleRate * 2 * numOfChan); setUint16(numOfChan * 2); setUint16(16); setUint32(0x61746164); setUint32(length - pos - 4);
-            for(i=0; i<buffer.numberOfChannels; i++) channels.push(buffer.getChannelData(i));
-            while(pos < length) { for(i=0; i<numOfChan; i++) { sample = Math.max(-1, Math.min(1, channels[i][offset])); sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0; view.setInt16(pos, sample, true); pos += 2; } offset++; }
-            return bufferArr;
-        }
-
-        // --- PLAYER CONTROLS (Mantidos) ---
         async function playSong(url, pitch, titulo, id) {
-            curSongId = id; document.getElementById('now-playing').innerText = "LOADING...";
+            curSongId = id; document.getElementById('now-playing').innerText = "Carregando...";
             player.stop(); player.unsync(); Tone.Transport.stop();
             await player.load(url);
             shift.pitch = pitch;
@@ -281,16 +212,39 @@
             loadSongs();
         }
 
+        async function savePitch() {
+            if(!curSongId) return;
+            const p = document.getElementById('p-slide').value;
+            await sb.from('musicas').update({ pitch: parseInt(p) }).eq('id', curSongId);
+            loadSongs();
+        }
+
         document.getElementById('play-btn').onclick = () => {
             if(Tone.Transport.state === "started") { Tone.Transport.pause(); document.getElementById('svg-play').innerHTML = '<path d="M8 5v14l11-7z"/>'; }
             else { Tone.Transport.start(); document.getElementById('svg-play').innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; }
         };
 
-        // Outros Listeners...
+        // Download Zip
+        async function downloadZip() {
+            const zip = new JSZip();
+            for (let s of allSongs) { const r = await fetch(s.audio_url); const b = await r.blob(); zip.file(`${s.titulo}.mp3`, b); }
+            const c = await zip.generateAsync({type:"blob"}); saveAs(c, `playlist.zip`);
+        }
+
+        // Listeners
         document.getElementById('p-slide').oninput = (e) => { shift.pitch = e.target.value; document.getElementById('p-val').innerText = e.target.value; };
         document.getElementById('v-slide').oninput = (e) => { Tone.Destination.volume.value = e.target.value; };
         document.getElementById('seek-slide').oninput = (e) => { Tone.Transport.seconds = e.target.value; player.seek(e.target.value); };
         setInterval(() => { if(Tone.Transport.state === "started") document.getElementById('seek-slide').value = Tone.Transport.seconds; }, 500);
+
+        document.getElementById('up-mp3').onchange = async (e) => {
+            const file = e.target.files[0];
+            const path = `audios/${Date.now()}_${file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase()}`;
+            await sb.storage.from('audios').upload(path, file);
+            const { data: { publicUrl } } = sb.storage.from('audios').getPublicUrl(path);
+            await sb.from('musicas').insert({ titulo: file.name, audio_url: publicUrl, playlist_id: curPl, pitch: 0 });
+            loadSongs();
+        };
 
         check();
     </script>
