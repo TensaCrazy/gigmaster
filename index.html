@@ -60,12 +60,12 @@
  
  <div id="auth">
    <div class="auth-box">
-     <h2 style="color:var(--green);letter-spacing:4px">GIGMASTER</h2>
-     <input id="email" type="email" placeholder="E-mail">
-     <input id="pass" type="password" placeholder="Senha">
-     <button class="btn" onclick="handleAuth('in')">ENTRAR</button>
-     <button class="btn" style="background:#4285F4" onclick="loginGoogle()">GOOGLE</button>
-     <p style="font-size:11px;color:#777;cursor:pointer" onclick="handleAuth('up')">Criar conta</p>
+    <h2 style="color:var(--green);letter-spacing:4px">GIGMASTER</h2>
+    <input id="email" type="email" placeholder="E-mail">
+    <input id="pass" type="password" placeholder="Senha">
+    <button id="btn-login" class="btn">ENTRAR</button>
+    <button id="btn-google" class="btn" style="background:#4285F4">GOOGLE</button>
+    <p id="btn-signup" style="font-size:11px;color:#777;cursor:pointer">Criar conta</p>
    </div>
  </div>
  
@@ -83,24 +83,24 @@
    <div class="u-badge" onclick="toggleMenu()">
      <span id="u-display">PERFIL</span> ▼
      <div class="drop-menu" id="u-drop">
-       <div onclick="toggleTheme()">🌓 TEMA</div>
-       <div onclick="uiRenameNick()">👤 NICKNAME</div>
+       <div id="btn-theme">🌓 TEMA</div>
+       <div id="btn-rename-nick">👤 NICKNAME</div>
        <div onclick="toast('Bug relatado!')">🐞 RELATAR BUG</div>
-       <div onclick="openM('modal-pix')">💎 APOIAR PIX</div>
-       <div onclick="logout()" style="color:#ff4d4d">🚪 SAIR</div>
+       <div id="btn-pix">💎 APOIAR PIX</div>
+       <div id="btn-logout" style="color:#ff4d4d">🚪 SAIR</div>
      </div>
    </div>
  </header>
  
  <main>
  <aside>
-   <button class="btn" onclick="addPlaylist()">+ NOVA PASTA</button>
+  <button id="add-pl-btn" class="btn">+ NOVA PASTA</button>
    <div id="playlist-container"></div>
  </aside>
  <section>
    <h2 id="pl-title">Biblioteca</h2>
    <input type="file" id="upload" hidden accept="audio/mp3">
-   <button class="btn" id="btn-up" style="display:none;width:200px" onclick="upload.click()">IMPORTAR MP3</button>
+  <button class="btn" id="btn-up" style="display:none;width:200px">IMPORTAR MP3</button>
    <div id="songs-container"></div>
  </section>
  </main>
@@ -114,7 +114,7 @@
      <input id="p-slide" type="range" min="-7" max="7" value="0">
      <b id="p-val">0</b>
    </div>
-   <button id="play-btn" onclick="togglePlay()" style="width:50px;height:50px;border-radius:50%;background:#fff;color:#000;font-size:20px">▶</button>
+  <button id="play-btn" style="width:50px;height:50px;border-radius:50%;background:#fff;color:#000;font-size:20px">▶</button>
    <div class="slider-box">
      <span>VOL</span>
      <input id="v-slide" type="range" min="-40" max="6" value="0">
@@ -168,18 +168,39 @@ const playBtnEl = document.getElementById("play-btn");
      document.getElementById("u-display").innerText = (prof?.username || session.user.email.split("@")[0]).toUpperCase();
      
      // Tenta carregar playlists 3 vezes se falhar
-     let tentativas = 0;
-     const interval = setInterval(async () => {
-         const ok = await loadPlaylists();
-         tentativas++;
-         if(ok || tentativas > 3) clearInterval(interval);
-     }, 500);
+    // If the page has a shared query param, open it first
+    const urlParams = new URLSearchParams(window.location.search);
+    const shared = urlParams.get('shared');
+    if(shared){
+      // attempt to load shared playlist (may require public DB permissions)
+      await loadSharedPlaylist(shared);
+    }
+
+    let tentativas = 0;
+    const interval = setInterval(async () => {
+        const ok = await loadPlaylists();
+        tentativas++;
+        if(ok || tentativas > 3) clearInterval(interval);
+    }, 500);
  
    } else {
      document.getElementById("auth").style.display="flex";
      document.getElementById("app").style.display="none";
    }
  });
+
+async function loadSharedPlaylist(id){
+  try{
+    const { data, error } = await sb.from('playlists').select('*').eq('id', id).single();
+    if(error || !data){ toast('Playlist compartilhada não encontrada'); return; }
+    curPl = data.id;
+    document.getElementById('pl-title').innerText = data.nome;
+    document.getElementById('btn-up').style.display = 'block';
+    await loadSongs();
+    // highlight in list if possible
+    await loadPlaylists();
+  }catch(e){ console.error(e); toast('Erro ao abrir playlist compartilhada'); }
+}
  
  /* PLAYLISTS */
 async function loadPlaylists(){
@@ -195,15 +216,34 @@ async function loadPlaylists(){
     const safeName = JSON.stringify(p.nome);
     const active = (curPl == p.id) ? 'active' : '';
     return `
-      <div class="playlist ${active}" onclick="selectPlaylist(${p.id}, ${safeName})">
+      <div class="playlist ${active}" data-id="${p.id}" data-name=${safeName}>
         <b>${p.nome.toUpperCase()}</b>
         <div class="pl-tools">
-          <span onclick="event.stopPropagation(); downloadZip(${p.id}, ${safeName})">📦 ZIP</span>
-          <span onclick="event.stopPropagation(); deletePlaylist(${p.id})">🗑️ EXCLUIR</span>
+          <span data-action="zip" data-id="${p.id}" data-name=${safeName}>📦 ZIP</span>
+          <span data-action="rename" data-id="${p.id}" data-name=${safeName}>✎ RENOMEAR</span>
+          <span data-action="share" data-id="${p.id}">🔗 COMPARTILHAR</span>
+          <span data-action="delete" data-id="${p.id}">🗑️ EXCLUIR</span>
         </div>
       </div>`;
   }).join("");
   return true;
+}
+
+async function renamePlaylist(id, oldName){
+  const n = prompt('Novo nome:', oldName.replace(/^"|"$/g, ''));
+  if(!n) return;
+  await sb.from('playlists').update({ nome: n }).eq('id', id);
+  loadPlaylists();
+  if(curPl === id) document.getElementById('pl-title').innerText = n;
+  toast('Renomeado');
+}
+
+async function sharePlaylist(id){
+  const url = new URL(window.location.href);
+  url.searchParams.set('shared', id);
+  const shareUrl = url.toString();
+  try{ await navigator.clipboard.writeText(shareUrl); toast('Link copiado!'); }
+  catch(e){ prompt('Copie o link abaixo:', shareUrl); }
 }
  
  /* AUDIO & SONGS */
@@ -252,20 +292,23 @@ async function togglePlay(){
  setInterval(()=>{ if(player.state==="started" && !dragging) sk.value=offset+(Tone.now()-lastStart); }, 100);
  
 if(pSlideEl) pSlideEl.oninput = e => { routeAudio(parseInt(e.target.value)); if(pValEl) pValEl.innerText = e.target.value; };
-if(vSlideEl) vSlideEl.oninput = e => Tone.Destination.volume.value = e.target.value;
+if(vSlideEl) vSlideEl.oninput = e => Tone.Destination.volume.value = parseFloat(e.target.value);
  
  async function selectPlaylist(id,n){ curPl=id; document.getElementById("pl-title").innerText=n; document.getElementById("btn-up").style.display="block"; loadSongs(); loadPlaylists(); }
  
  async function loadSongs(){
    const {data}=await sb.from("musicas").select("*").eq("playlist_id",curPl).order("titulo");
-   document.getElementById("songs-container").innerHTML=(data||[]).map(s => `
-     <div class="song" onclick="playSong('${s.audio_url}','${s.titulo}',${s.pitch})">
-       <span>${s.titulo}</span>
-       <div class="song-actions" style="display:flex; gap:15px;">
-         <svg onclick="event.stopPropagation(); downloadDirect('${s.audio_url}', '${s.titulo}')" viewBox="0 0 24 24" width="18" fill="currentColor" style="opacity:0.6"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-         <span onclick="event.stopPropagation(); deleteSong(${s.id})" style="opacity:.4">✕</span>
-       </div>
-     </div>`).join("");
+  document.getElementById("songs-container").innerHTML=(data||[]).map(s => {
+    const safeTitle = JSON.stringify(s.titulo);
+    return `
+    <div class="song" data-id="${s.id}" data-audio="${s.audio_url}" data-title=${safeTitle} data-pitch="${s.pitch}">
+      <span>${s.titulo}</span>
+      <div class="song-actions" style="display:flex; gap:15px;">
+        <svg data-action="download" data-audio="${s.audio_url}" data-title=${safeTitle} viewBox="0 0 24 24" width="18" fill="currentColor" style="opacity:0.6"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        <span data-action="delete" data-id="${s.id}" style="opacity:.4">✕</span>
+      </div>
+    </div>`;
+  }).join("");
  }
  
  /* MENUS & GESTÃO */
@@ -277,8 +320,12 @@ if(vSlideEl) vSlideEl.oninput = e => Tone.Destination.volume.value = e.target.va
  
  async function addPlaylist(){
    const n=prompt("Nome da pasta:"); if(!n)return;
-   const {data:{user}}=await sb.auth.getUser();
-   await sb.from("playlists").insert([{nome:n,user_id:user.id}]); loadPlaylists();
+  const {data:{user}}=await sb.auth.getUser();
+  const { data, error } = await sb.from("playlists").insert([{nome:n,user_id:user.id}]).select().single();
+  if(error){ toast('Erro ao criar pasta'); return; }
+  await loadPlaylists();
+  // select the newly created playlist
+  if(data?.id) selectPlaylist(data.id, data.nome);
  }
  async function deletePlaylist(id){ if(confirm("Apagar pasta?")) { await sb.from("musicas").delete().eq("playlist_id",id); await sb.from("playlists").delete().eq("id",id); loadPlaylists(); } }
  async function deleteSong(id){ await sb.from("musicas").delete().eq("id",id); loadSongs(); }
@@ -322,6 +369,36 @@ if(uploadEl) uploadEl.onchange = async e => {
   await sb.from("musicas").insert([{ titulo: f.name, audio_url: publicUrl, playlist_id: curPl, pitch: 0 }]);
    loadSongs(); toast("OK!");
  };
+
+// Event delegation and static listeners
+const playlistContainer = document.getElementById('playlist-container');
+const songsContainer = document.getElementById('songs-container');
+if(playlistContainer){
+  playlistContainer.addEventListener('click', (ev)=>{
+    const actionEl = ev.target.closest('[data-action]');
+    if(actionEl){ ev.stopPropagation(); const action = actionEl.dataset.action; const id = actionEl.dataset.id; const name = actionEl.dataset.name; if(action==='zip') downloadZip(id, name); else if(action==='rename') renamePlaylist(id, name); else if(action==='share') sharePlaylist(id); else if(action==='delete') deletePlaylist(id); return; }
+    const pl = ev.target.closest('.playlist'); if(pl){ selectPlaylist(pl.dataset.id, pl.dataset.name); }
+  });
+}
+if(songsContainer){
+  songsContainer.addEventListener('click', (ev)=>{
+    const actionEl = ev.target.closest('[data-action]');
+    if(actionEl){ ev.stopPropagation(); const action = actionEl.dataset.action; if(action==='download') downloadDirect(actionEl.dataset.audio, actionEl.dataset.title); else if(action==='delete') deleteSong(actionEl.dataset.id); return; }
+    const song = ev.target.closest('.song'); if(song){ playSong(song.dataset.audio, song.dataset.title, parseInt(song.dataset.pitch||0)); }
+  });
+}
+
+// Static controls
+const addPlBtn = document.getElementById('add-pl-btn'); if(addPlBtn) addPlBtn.addEventListener('click', addPlaylist);
+const btnUp = document.getElementById('btn-up'); if(btnUp) btnUp.addEventListener('click', ()=> uploadEl.click());
+const btnLogin = document.getElementById('btn-login'); if(btnLogin) btnLogin.addEventListener('click', ()=> handleAuth('in'));
+const btnGoogle = document.getElementById('btn-google'); if(btnGoogle) btnGoogle.addEventListener('click', loginGoogle);
+const btnSignup = document.getElementById('btn-signup'); if(btnSignup) btnSignup.addEventListener('click', ()=> handleAuth('up'));
+if(playBtnEl) playBtnEl.addEventListener('click', togglePlay);
+const btnTheme = document.getElementById('btn-theme'); if(btnTheme) btnTheme.addEventListener('click', toggleTheme);
+const btnRenameNick = document.getElementById('btn-rename-nick'); if(btnRenameNick) btnRenameNick.addEventListener('click', uiRenameNick);
+const btnPix = document.getElementById('btn-pix'); if(btnPix) btnPix.addEventListener('click', ()=> openM('modal-pix'));
+const btnLogout = document.getElementById('btn-logout'); if(btnLogout) btnLogout.addEventListener('click', logout);
  </script>
  </body>
  </html>
